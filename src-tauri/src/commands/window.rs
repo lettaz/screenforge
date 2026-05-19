@@ -91,3 +91,63 @@ pub async fn restore_toolbar(app: AppHandle) -> Result<(), String> {
     }
     Ok(())
 }
+
+/// Open the teleprompter / speaker-notes window.
+///
+/// The window floats above other apps but is marked
+/// `NSWindowSharingNone` on macOS so it is excluded from ScreenCaptureKit
+/// captures. Notes typed into it never appear in recordings.
+#[tauri::command]
+pub async fn open_teleprompter_window(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("teleprompter") {
+        window.show().map_err(|e| e.to_string())?;
+        window.set_focus().map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+
+    let window = WebviewWindowBuilder::new(
+        &app,
+        "teleprompter",
+        WebviewUrl::App("index.html?window=teleprompter".into()),
+    )
+    .title("Screenforge — Teleprompter")
+    .inner_size(480.0, 320.0)
+    .min_inner_size(320.0, 200.0)
+    .resizable(true)
+    .decorations(true)
+    .transparent(false)
+    .always_on_top(true)
+    .skip_taskbar(true)
+    .focused(true)
+    .build()
+    .map_err(|e| e.to_string())?;
+
+    // On macOS, mark the window with NSWindowSharingNone (= 0) so it is
+    // excluded from ScreenCaptureKit / built-in screen recording captures.
+    // The selector takes an NSUInteger (u64 on macOS, which is always 64-bit).
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(ns_window) = window.ns_window() {
+            let ptr: *mut objc2::runtime::AnyObject = ns_window.cast();
+            if !ptr.is_null() {
+                unsafe {
+                    let _: () = objc2::msg_send![&*ptr, setSharingType: 0u64];
+                }
+            }
+        }
+    }
+    // Silence the unused-variable warning when the cfg block above is gated out.
+    let _ = &window;
+
+    tracing::info!("Opened teleprompter window");
+    Ok(())
+}
+
+/// Hide the teleprompter window without destroying it (preserves typed notes).
+#[tauri::command]
+pub async fn hide_teleprompter_window(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("teleprompter") {
+        window.hide().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}

@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Default capabilities for the main window",
-  "windows": ["toolbar", "editor"],
+  "windows": ["toolbar", "editor", "teleprompter"],
   "permissions": [
     "core:default",
     "core:window:default",

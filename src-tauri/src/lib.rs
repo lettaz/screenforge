@@ -81,6 +81,8 @@ pub fn run() {
             commands::window::get_window_label,
             commands::window::minimize_toolbar,
             commands::window::restore_toolbar,
+            commands::window::open_teleprompter_window,
+            commands::window::hide_teleprompter_window,
             // Export commands
             commands::export::start_export,
             commands::export::cancel_export,

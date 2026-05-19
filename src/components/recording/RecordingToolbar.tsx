@@ -13,6 +13,7 @@ import {
   Volume2,
   VolumeX,
   Settings,
+  ScrollText,
   X,
   ChevronDown,
   Circle,
@@ -607,6 +608,23 @@ export default function RecordingToolbar() {
 
         {/* Right side controls */}
         <div className="flex items-center gap-1 ml-auto">
+          {/* Teleprompter */}
+          <button
+            type="button"
+            onClick={async (e) => {
+              e.stopPropagation();
+              try {
+                await invoke("open_teleprompter_window");
+              } catch (err) {
+                console.error("Failed to open teleprompter:", err);
+              }
+            }}
+            className="toolbar-btn-icon"
+            title="Open teleprompter (notes hidden from recording)"
+          >
+            <ScrollText className="w-4 h-4" />
+          </button>
+
           {/* Settings */}
           <button
             type="button"
