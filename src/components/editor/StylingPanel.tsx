@@ -4,12 +4,14 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import {
   BookOpen,
   Image as ImageIcon,
+  MousePointer2,
   Palette,
   Sparkles,
   Square,
 } from "lucide-react";
 import { useProjectStore } from "../../stores/projectStore";
 import PresetsSection from "./PresetsSection";
+import ClickEffectsSection from "./ClickEffectsSection";
 import type {
   BackgroundType,
   GradientConfig,
@@ -17,7 +19,13 @@ import type {
   ShadowConfig,
 } from "../../types/project";
 
-type Section = "background" | "frame" | "shadow" | "aspect" | "presets";
+type Section =
+  | "background"
+  | "frame"
+  | "shadow"
+  | "aspect"
+  | "clicks"
+  | "presets";
 
 const SOLID_PRESETS: readonly string[] = [
   "#0F172A",
@@ -124,6 +132,7 @@ export default function StylingPanel() {
             { id: "frame", label: "Frame", icon: Square },
             { id: "shadow", label: "Shadow", icon: Sparkles },
             { id: "aspect", label: "Aspect", icon: ImageIcon },
+            { id: "clicks", label: "Clicks", icon: MousePointer2 },
             { id: "presets", label: "Presets", icon: BookOpen },
           ] as const
         ).map(({ id, label, icon: Icon }) => {
@@ -437,6 +446,8 @@ export default function StylingPanel() {
             </p>
           </>
         )}
+
+        {section === "clicks" && <ClickEffectsSection />}
 
         {section === "presets" && <PresetsSection />}
       </div>

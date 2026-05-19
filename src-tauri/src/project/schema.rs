@@ -203,6 +203,54 @@ impl Default for CameraConfig {
 }
 
 // =============================================================================
+// Click Effects Types
+// =============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ClickEffectStyle {
+    Ripple,
+    Pulse,
+    Square,
+}
+
+impl Default for ClickEffectStyle {
+    fn default() -> Self {
+        Self::Ripple
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClickEffectsConfig {
+    pub enabled: bool,
+    pub style: ClickEffectStyle,
+    pub color_left: String,
+    pub color_right: String,
+    pub size: f64,
+    pub duration_ms: f64,
+    pub sound_enabled: bool,
+    pub sound_url: Option<String>,
+    pub sound_volume: f64,
+}
+
+impl Default for ClickEffectsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            style: ClickEffectStyle::default(),
+            color_left: "#3B82F6".to_string(),
+            color_right: "#EF4444".to_string(),
+            size: 1.0,
+            duration_ms: 500.0,
+            sound_enabled: false,
+            sound_url: None,
+            sound_volume: 0.6,
+        }
+    }
+}
+
+// =============================================================================
 // Audio Types
 // =============================================================================
 
@@ -274,6 +322,9 @@ pub struct ProjectConfig {
     /// `#[serde(default)]` keeps older project files loadable.
     #[serde(default)]
     pub screen_radius: f64,
+    /// Click highlight effect config (added in Screenforge v0.2).
+    #[serde(default)]
+    pub click_effects: ClickEffectsConfig,
 }
 
 impl Default for ProjectConfig {
@@ -288,6 +339,7 @@ impl Default for ProjectConfig {
             recording_range: (0.0, 0.0),
             output_aspect_ratio: AspectRatio::default(),
             screen_radius: 16.0,
+            click_effects: ClickEffectsConfig::default(),
         }
     }
 }

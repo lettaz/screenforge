@@ -83,6 +83,8 @@ export default function EditorView() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const micAudioRef = useRef<HTMLAudioElement>(null);
   const systemAudioRef = useRef<HTMLAudioElement>(null);
+  const clickSoundRef = useRef<HTMLAudioElement>(null);
+  const lastPlayedClickTimeRef = useRef<number>(-1);
 
   // Audio offset state - compensates for audio starting later than video during recording
   const [micAudioOffset, setMicAudioOffset] = useState(0);
@@ -264,6 +266,43 @@ export default function EditorView() {
     recordingBundle?.mouseMoves,
     updateCursorForTime,
   ]);
+
+  // Play click sound when a new click enters the recent window during playback.
+  // We track the highest processTimeMs we've already played and only fire for
+  // strictly newer events to avoid replaying the same click as it ages.
+  useEffect(() => {
+    if (!isPlaying) {
+      return;
+    }
+    const config = project?.config.clickEffects;
+    if (!config?.soundEnabled || !config.soundUrl || recentClicks.length === 0) {
+      return;
+    }
+    const audio = clickSoundRef.current;
+    if (!audio) {
+      return;
+    }
+    const newest = recentClicks.reduce(
+      (max, click) => Math.max(max, click.processTimeMs),
+      -1,
+    );
+    if (newest <= lastPlayedClickTimeRef.current) {
+      return;
+    }
+    lastPlayedClickTimeRef.current = newest;
+    audio.volume = Math.max(0, Math.min(1, config.soundVolume));
+    audio.currentTime = 0;
+    audio.play().catch(() => {
+      /* ignore autoplay failures */
+    });
+  }, [recentClicks, isPlaying, project?.config.clickEffects]);
+
+  // Reset the click-sound dedup cursor whenever the user seeks while paused.
+  useEffect(() => {
+    if (!isPlaying) {
+      lastPlayedClickTimeRef.current = -1;
+    }
+  }, [sourceTimeMs, isPlaying]);
 
   // Measure preview container size
   useEffect(() => {
@@ -845,8 +884,20 @@ export default function EditorView() {
               videoHeight={videoHeight}
               containerWidth={previewSize.width}
               containerHeight={previewSize.height}
+              config={project?.config.clickEffects}
             />
           )}
+          {/* Click sound (hidden audio element, played on new clicks during preview) */}
+          {project?.config.clickEffects?.soundEnabled &&
+            project.config.clickEffects.soundUrl && (
+              <audio
+                ref={clickSoundRef}
+                src={project.config.clickEffects.soundUrl}
+                preload="auto"
+              >
+                <track kind="captions" />
+              </audio>
+            )}
 
           {/* Cursor Overlay */}
           {recordingBundle && (

@@ -60,6 +60,17 @@ const defaultConfig: ProjectConfig = {
   recordingRange: [0, 0],
   outputAspectRatio: { x: 16, y: 9 },
   screenRadius: 16,
+  clickEffects: {
+    enabled: true,
+    style: "ripple",
+    colorLeft: "#3B82F6",
+    colorRight: "#EF4444",
+    size: 1,
+    durationMs: 500,
+    soundEnabled: false,
+    soundUrl: null,
+    soundVolume: 0.6,
+  },
 };
 
 function generateId(): string {

@@ -1,32 +1,34 @@
-/**
- * ClickIndicator - Renders visual feedback for mouse clicks
- *
- * Shows a ripple effect at the click position that fades out over time.
- */
-
 import { useMemo } from "react";
 import type { MouseClickEvent } from "../../types/recording";
+import type { ClickEffectsConfig } from "../../types/project";
 
 interface ClickWithAge extends MouseClickEvent {
-  age: number; // How many ms ago the click occurred
+  age: number;
 }
 
 interface ClickIndicatorProps {
-  /** Recent clicks with age information */
   clicks: ClickWithAge[];
-  /** Video dimensions for coordinate scaling */
   videoWidth: number;
   videoHeight: number;
-  /** Preview container dimensions */
   containerWidth: number;
   containerHeight: number;
-  /** Duration in ms for click to fade out (default 500) */
-  fadeDuration?: number;
+  /** Optional project click-effects config; falls back to a sensible default. */
+  config?: ClickEffectsConfig;
 }
 
-/**
- * Calculate the scale factor to fit video in container while maintaining aspect ratio
- */
+const DEFAULT_CONFIG: ClickEffectsConfig = {
+  enabled: true,
+  style: "ripple",
+  colorLeft: "#3B82F6",
+  colorRight: "#EF4444",
+  size: 1,
+  durationMs: 500,
+  soundEnabled: false,
+  soundUrl: null,
+  soundVolume: 0.6,
+};
+
+/** Letterbox fit: scale the source rect into the container, preserving aspect. */
 function calculateScale(
   videoWidth: number,
   videoHeight: number,
@@ -36,18 +38,43 @@ function calculateScale(
   if (videoWidth === 0 || videoHeight === 0) {
     return { scale: 1, offsetX: 0, offsetY: 0 };
   }
-
-  const scaleX = containerWidth / videoWidth;
-  const scaleY = containerHeight / videoHeight;
-  const scale = Math.min(scaleX, scaleY);
-
-  // Center the video in the container
-  const scaledWidth = videoWidth * scale;
-  const scaledHeight = videoHeight * scale;
-  const offsetX = (containerWidth - scaledWidth) / 2;
-  const offsetY = (containerHeight - scaledHeight) / 2;
-
+  const scale = Math.min(
+    containerWidth / videoWidth,
+    containerHeight / videoHeight,
+  );
+  const offsetX = (containerWidth - videoWidth * scale) / 2;
+  const offsetY = (containerHeight - videoHeight * scale) / 2;
   return { scale, offsetX, offsetY };
+}
+
+function buttonColor(
+  button: MouseClickEvent["button"],
+  config: ClickEffectsConfig,
+): string {
+  switch (button) {
+    case "left":
+      return config.colorLeft;
+    case "right":
+      return config.colorRight;
+    case "middle":
+      return "#A855F7";
+  }
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const sanitized = hex.replace("#", "");
+  const r = parseInt(sanitized.slice(0, 2), 16);
+  const g = parseInt(sanitized.slice(2, 4), 16);
+  const b = parseInt(sanitized.slice(4, 6), 16);
+  if (
+    Number.isNaN(r) ||
+    Number.isNaN(g) ||
+    Number.isNaN(b) ||
+    sanitized.length !== 6
+  ) {
+    return `rgba(59, 130, 246, ${alpha})`;
+  }
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 export function ClickIndicator({
@@ -56,52 +83,86 @@ export function ClickIndicator({
   videoHeight,
   containerWidth,
   containerHeight,
-  fadeDuration = 500,
+  config: providedConfig,
 }: ClickIndicatorProps) {
+  const config = providedConfig ?? DEFAULT_CONFIG;
+
   const { scale, offsetX, offsetY } = useMemo(
     () =>
       calculateScale(videoWidth, videoHeight, containerWidth, containerHeight),
     [videoWidth, videoHeight, containerWidth, containerHeight],
   );
 
-  if (clicks.length === 0) return null;
+  if (!config.enabled || clicks.length === 0) {
+    return null;
+  }
+
+  const baseSize = 24 * config.size;
+  const maxSize = 80 * config.size;
+  const fadeDuration = Math.max(50, config.durationMs);
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {clicks.map((click, index) => {
-        // Convert video coordinates to container coordinates
         const x = click.x * scale + offsetX;
         const y = click.y * scale + offsetY;
 
-        // Calculate opacity based on age (fade out)
         const progress = Math.min(click.age / fadeDuration, 1);
         const opacity = 1 - progress;
-
-        // Calculate ripple size (grows as it fades)
-        const baseSize = 20;
-        const maxSize = 60;
         const size = baseSize + (maxSize - baseSize) * progress;
 
-        // Color based on button type
-        const color =
-          click.button === "left"
-            ? "rgba(59, 130, 246, " // Blue
-            : click.button === "right"
-              ? "rgba(239, 68, 68, " // Red
-              : "rgba(168, 85, 247, "; // Purple for middle
+        const color = buttonColor(click.button, config);
+        const fill = hexToRgba(color, opacity * 0.3);
+        const border = hexToRgba(color, opacity);
+
+        const style: React.CSSProperties = {
+          left: x - size / 2,
+          top: y - size / 2,
+          width: size,
+          height: size,
+        };
+
+        if (config.style === "ripple") {
+          return (
+            <div
+              key={`${click.processTimeMs}-${index}`}
+              className="absolute rounded-full"
+              style={{
+                ...style,
+                backgroundColor: fill,
+                border: `2px solid ${border}`,
+              }}
+            />
+          );
+        }
+
+        if (config.style === "pulse") {
+          const pulseSize = baseSize + (maxSize - baseSize) * progress * 0.5;
+          return (
+            <div
+              key={`${click.processTimeMs}-${index}`}
+              className="absolute rounded-full"
+              style={{
+                ...style,
+                width: pulseSize,
+                height: pulseSize,
+                left: x - pulseSize / 2,
+                top: y - pulseSize / 2,
+                backgroundColor: hexToRgba(color, opacity * 0.55),
+                boxShadow: `0 0 ${20 * opacity}px ${hexToRgba(color, opacity * 0.6)}`,
+              }}
+            />
+          );
+        }
 
         return (
           <div
             key={`${click.processTimeMs}-${index}`}
-            className="absolute rounded-full"
+            className="absolute rounded-md"
             style={{
-              left: x - size / 2,
-              top: y - size / 2,
-              width: size,
-              height: size,
-              backgroundColor: color + opacity * 0.3 + ")",
-              border: `2px solid ${color + opacity + ")"}`,
-              transform: "translate(0, 0)",
+              ...style,
+              backgroundColor: fill,
+              border: `2px solid ${border}`,
             }}
           />
         );

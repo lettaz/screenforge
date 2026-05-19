@@ -88,6 +88,24 @@ export interface CameraConfig {
 }
 
 // =============================================================================
+// Click Effects Types
+// =============================================================================
+
+export type ClickEffectStyle = "ripple" | "pulse" | "square";
+
+export interface ClickEffectsConfig {
+  enabled: boolean;
+  style: ClickEffectStyle;
+  colorLeft: string;
+  colorRight: string;
+  size: number;
+  durationMs: number;
+  soundEnabled: boolean;
+  soundUrl: string | null;
+  soundVolume: number;
+}
+
+// =============================================================================
 // Audio Types
 // =============================================================================
 
@@ -124,6 +142,8 @@ export interface ProjectConfig {
   outputAspectRatio: AspectRatio;
   /** Corner radius for the screen frame, in pixels. Added in Screenforge v0.2. */
   screenRadius?: number;
+  /** Click highlight effect configuration. Added in Screenforge v0.2. */
+  clickEffects?: ClickEffectsConfig;
 }
 
 // =============================================================================
