@@ -8,9 +8,11 @@ import {
   FolderOpen,
 } from "lucide-react";
 import ExportDialog from "../export/ExportDialog";
+import StylingPanel from "./StylingPanel";
 import { useProjectStore } from "../../stores/projectStore";
 import { usePlaybackStore } from "../../stores/playbackStore";
 import { useEditorStore } from "../../stores/editorStore";
+import { backgroundToCss, shadowToCss } from "../../utils/styleUtils";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { convertFileSrc } from "@tauri-apps/api/core";
@@ -741,10 +743,29 @@ export default function EditorView() {
       </div>
 
       {/* Main Preview Area */}
-      <div className="flex-1 flex items-center justify-center p-4 min-h-0">
+      <div className="flex-1 flex min-h-0">
+        <div className="flex-1 flex items-center justify-center p-4 min-h-0">
+          <div
+            className="relative w-full max-w-5xl rounded-xl overflow-hidden"
+            style={{
+              aspectRatio: project
+                ? `${project.config.outputAspectRatio.x} / ${project.config.outputAspectRatio.y}`
+                : "16 / 9",
+              background: project
+                ? backgroundToCss(project.config.background)
+                : "#000",
+              padding: project
+                ? `${project.config.padding.top}px ${project.config.padding.right}px ${project.config.padding.bottom}px ${project.config.padding.left}px`
+                : 0,
+            }}
+          >
         <div
           ref={previewRef}
-          className="relative w-full max-w-5xl aspect-video bg-black rounded-xl overflow-hidden shadow-2xl"
+          className="relative w-full h-full bg-black overflow-hidden"
+          style={{
+            borderRadius: `${project?.config.screenRadius ?? 0}px`,
+            boxShadow: project ? shadowToCss(project.config.shadow) : "0 0 0 transparent",
+          }}
         >
           {/* Loading state */}
           {isLoadingRecording && (
@@ -839,7 +860,10 @@ export default function EditorView() {
               containerHeight={previewSize.height}
             />
           )}
+          </div>
+          </div>
         </div>
+        <StylingPanel />
       </div>
 
       {/* Timeline */}

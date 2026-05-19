@@ -270,6 +270,10 @@ pub struct ProjectConfig {
     pub audio: AudioConfig,
     pub recording_range: (f64, f64),
     pub output_aspect_ratio: AspectRatio,
+    /// Corner radius for the screen frame, in pixels (added in Screenforge v0.2).
+    /// `#[serde(default)]` keeps older project files loadable.
+    #[serde(default)]
+    pub screen_radius: f64,
 }
 
 impl Default for ProjectConfig {
@@ -283,6 +287,7 @@ impl Default for ProjectConfig {
             audio: AudioConfig::default(),
             recording_range: (0.0, 0.0),
             output_aspect_ratio: AspectRatio::default(),
+            screen_radius: 16.0,
         }
     }
 }

@@ -59,6 +59,7 @@ const defaultConfig: ProjectConfig = {
   },
   recordingRange: [0, 0],
   outputAspectRatio: { x: 16, y: 9 },
+  screenRadius: 16,
 };
 
 function generateId(): string {

@@ -122,6 +122,8 @@ export interface ProjectConfig {
   audio: AudioConfig;
   recordingRange: [number, number];
   outputAspectRatio: AspectRatio;
+  /** Corner radius for the screen frame, in pixels. Added in Screenforge v0.2. */
+  screenRadius?: number;
 }
 
 // =============================================================================
