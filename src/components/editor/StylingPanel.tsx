@@ -6,6 +6,7 @@ import {
   EyeOff,
   Image as ImageIcon,
   Keyboard,
+  Music,
   MousePointer2,
   Palette,
   Sparkles,
@@ -16,6 +17,7 @@ import PresetsSection from "./PresetsSection";
 import ClickEffectsSection from "./ClickEffectsSection";
 import KeystrokesSection from "./KeystrokesSection";
 import BlurRegionsSection from "./BlurRegionsSection";
+import MusicSection from "./MusicSection";
 import type {
   BackgroundType,
   GradientConfig,
@@ -31,6 +33,7 @@ type Section =
   | "clicks"
   | "keys"
   | "privacy"
+  | "music"
   | "presets";
 
 const SOLID_PRESETS: readonly string[] = [
@@ -141,6 +144,7 @@ export default function StylingPanel() {
             { id: "clicks", label: "Clicks", icon: MousePointer2 },
             { id: "keys", label: "Keys", icon: Keyboard },
             { id: "privacy", label: "Privacy", icon: EyeOff },
+            { id: "music", label: "Music", icon: Music },
             { id: "presets", label: "Presets", icon: BookOpen },
           ] as const
         ).map(({ id, label, icon: Icon }) => {
@@ -460,6 +464,8 @@ export default function StylingPanel() {
         {section === "keys" && <KeystrokesSection />}
 
         {section === "privacy" && <BlurRegionsSection />}
+
+        {section === "music" && <MusicSection />}
 
         {section === "presets" && <PresetsSection />}
       </div>

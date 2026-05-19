@@ -304,6 +304,34 @@ impl Default for KeystrokesOverlayConfig {
 }
 
 // =============================================================================
+// Background Music Types
+// =============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackgroundMusicConfig {
+    pub enabled: bool,
+    pub audio_url: Option<String>,
+    pub audio_path: Option<String>,
+    pub volume: f64,
+    pub fade_in_ms: u64,
+    pub fade_out_ms: u64,
+}
+
+impl Default for BackgroundMusicConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            audio_url: None,
+            audio_path: None,
+            volume: 0.3,
+            fade_in_ms: 500,
+            fade_out_ms: 1000,
+        }
+    }
+}
+
+// =============================================================================
 // Audio Types
 // =============================================================================
 
@@ -381,6 +409,9 @@ pub struct ProjectConfig {
     /// On-screen keystrokes overlay config (added in Screenforge v0.2).
     #[serde(default)]
     pub keystrokes_overlay: KeystrokesOverlayConfig,
+    /// Background music to mix into the exported video (added in Screenforge v0.2).
+    #[serde(default)]
+    pub music: BackgroundMusicConfig,
 }
 
 impl Default for ProjectConfig {
@@ -397,6 +428,7 @@ impl Default for ProjectConfig {
             screen_radius: 16.0,
             click_effects: ClickEffectsConfig::default(),
             keystrokes_overlay: KeystrokesOverlayConfig::default(),
+            music: BackgroundMusicConfig::default(),
         }
     }
 }

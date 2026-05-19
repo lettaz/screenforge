@@ -259,7 +259,10 @@ export default function ExportDialog({
       const screenSlices = getScreenSlices();
       const edits = slicesToTrackEdits(screenSlices);
 
-      // Start export with edits (respects trim/cut/speed changes)
+      const music = project?.config.music;
+      const motionBlur = project?.config.motionBlur ?? 0;
+      const bitrate = project?.config.exportBitrateKbps;
+
       await invoke("start_export_with_edits", {
         projectDir: projectDir,
         options: {
@@ -273,6 +276,13 @@ export default function ExportDialog({
           includeWebcam: true,
           includeMicAudio: true,
           includeSystemAudio: true,
+          musicAudioFile:
+            music?.enabled && music.audioPath ? music.audioPath : null,
+          musicVolume: music?.enabled ? music.volume : 0,
+          musicFadeInMs: music?.enabled ? music.fadeInMs : 0,
+          musicFadeOutMs: music?.enabled ? music.fadeOutMs : 0,
+          motionBlur,
+          videoBitrateKbps: bitrate ?? null,
         },
         edits,
       });

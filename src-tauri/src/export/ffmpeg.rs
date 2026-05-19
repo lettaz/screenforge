@@ -640,6 +640,7 @@ pub fn export_with_edits(
     let mut webcam_input_index: Option<usize> = None;
     let mut mic_input_index: Option<usize> = None;
     let mut system_input_index: Option<usize> = None;
+    let mut music_input_index: Option<usize> = None;
     let mut next_input = 1;
 
     // Input 1: webcam (if included)
@@ -664,6 +665,16 @@ pub fn export_with_edits(
         if options.include_system_audio && system_path.exists() {
             args.extend(["-i".to_string(), system_path.to_string_lossy().to_string()]);
             system_input_index = Some(next_input);
+            next_input += 1;
+        }
+    }
+
+    // Optional background music input (Screenforge #20).
+    if let Some(music_path_str) = options.music_audio_file.as_deref() {
+        let music_path = Path::new(music_path_str);
+        if music_path.exists() && options.music_volume > 0.0 {
+            args.extend(["-i".to_string(), music_path.to_string_lossy().to_string()]);
+            music_input_index = Some(next_input);
         }
     }
 
@@ -753,6 +764,37 @@ pub fn export_with_edits(
         audio_outputs.push(format!("[{}]", audio_label));
     }
 
+    // Background-music filter: volume + optional fade in/out. The music plays
+    // for the full output duration, looping automatically via aloop+atrim.
+    if let Some(music_idx) = music_input_index {
+        let total_out_ms = edits.total_output_duration_ms();
+        let total_out_secs = total_out_ms as f64 / 1000.0;
+        let volume = options.music_volume.max(0.0).min(2.0);
+        let mut chain = format!(
+            "[{}:a]aloop=loop=-1:size=2e+09,atrim=duration={:.3},asetpts=N/SR/TB,volume={:.3}",
+            music_idx, total_out_secs, volume
+        );
+        if options.music_fade_in_ms > 0 {
+            chain.push_str(&format!(
+                ",afade=t=in:st=0:d={:.3}",
+                options.music_fade_in_ms as f64 / 1000.0
+            ));
+        }
+        if options.music_fade_out_ms > 0 {
+            let fade_start = (total_out_secs
+                - options.music_fade_out_ms as f64 / 1000.0)
+                .max(0.0);
+            chain.push_str(&format!(
+                ",afade=t=out:st={:.3}:d={:.3}",
+                fade_start,
+                options.music_fade_out_ms as f64 / 1000.0
+            ));
+        }
+        chain.push_str("[music]");
+        filter_parts.push(chain);
+        audio_outputs.push("[music]".to_string());
+    }
+
     // Mix audio if multiple sources
     let final_audio_label = if audio_outputs.len() > 1 {
         filter_parts.push(format!(
@@ -810,7 +852,10 @@ pub fn export_with_edits(
     }
 
     // Audio codec
-    if mic_input_index.is_some() || system_input_index.is_some() {
+    if mic_input_index.is_some()
+        || system_input_index.is_some()
+        || music_input_index.is_some()
+    {
         args.extend([
             "-c:a".to_string(),
             "aac".to_string(),

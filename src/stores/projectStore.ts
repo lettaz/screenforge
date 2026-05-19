@@ -79,6 +79,14 @@ const defaultConfig: ProjectConfig = {
     visibleDurationMs: 1500,
     maxChips: 8,
   },
+  music: {
+    enabled: false,
+    audioUrl: null,
+    audioPath: null,
+    volume: 0.3,
+    fadeInMs: 500,
+    fadeOutMs: 1000,
+  },
 };
 
 function generateId(): string {

@@ -92,6 +92,7 @@ export default function EditorView() {
   const systemAudioRef = useRef<HTMLAudioElement>(null);
   const clickSoundRef = useRef<HTMLAudioElement>(null);
   const lastPlayedClickTimeRef = useRef<number>(-1);
+  const musicAudioRef = useRef<HTMLAudioElement>(null);
 
   // Audio offset state - compensates for audio starting later than video during recording
   const [micAudioOffset, setMicAudioOffset] = useState(0);
@@ -496,25 +497,33 @@ export default function EditorView() {
       videoRef.current.pause();
       micAudioRef.current?.pause();
       systemAudioRef.current?.pause();
+      musicAudioRef.current?.pause();
       pause();
     } else {
-      // Sync audio positions to video before playing
       syncAudio();
 
-      // Start all media elements together
-      // The sync happens through currentTime alignment, not through waiting
+      // Start all media elements together; sync happens via currentTime alignment.
       try {
+        const musicConfig = project?.config.music;
+        if (musicAudioRef.current && musicConfig?.enabled) {
+          musicAudioRef.current.volume = Math.max(
+            0,
+            Math.min(1, musicConfig.volume),
+          );
+          musicAudioRef.current.currentTime = videoRef.current.currentTime;
+        }
         await Promise.all([
           videoRef.current.play(),
           micAudioRef.current?.play(),
           systemAudioRef.current?.play(),
+          musicAudioRef.current?.play(),
         ]);
       } catch {
-        // Ignore autoplay errors
+        /* ignore autoplay errors */
       }
       play();
     }
-  }, [isPlaying, syncAudio, play, pause]);
+  }, [isPlaying, syncAudio, play, pause, project?.config.music]);
 
   // Handle video time update - convert source time to output time
   const handleVideoTimeUpdate = useCallback(
@@ -905,6 +914,17 @@ export default function EditorView() {
                 <track kind="captions" />
               </audio>
             )}
+          {/* Background music (hidden, looped during preview) */}
+          {project?.config.music?.enabled && project.config.music.audioUrl && (
+            <audio
+              ref={musicAudioRef}
+              src={project.config.music.audioUrl}
+              preload="auto"
+              loop
+            >
+              <track kind="captions" />
+            </audio>
+          )}
 
           {/* Cursor Overlay */}
           {recordingBundle && (

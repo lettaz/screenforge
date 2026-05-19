@@ -163,6 +163,26 @@ pub struct ExportOptions {
     pub screen_edits: Option<TrackEdits>,
     /// Camera track edits (optional - if None, use full source)
     pub camera_edits: Option<TrackEdits>,
+    /// Optional background music audio file (added in Screenforge v0.2).
+    #[serde(default)]
+    pub music_audio_file: Option<String>,
+    /// Background music volume in [0..1] (default 0.0 = silent).
+    #[serde(default)]
+    pub music_volume: f64,
+    /// Optional fade-in duration for the music track, in milliseconds.
+    #[serde(default)]
+    pub music_fade_in_ms: u64,
+    /// Optional fade-out duration for the music track, in milliseconds.
+    #[serde(default)]
+    pub music_fade_out_ms: u64,
+    /// Optional video-bitrate override in kbps (added in Screenforge v0.2 for
+    /// platform presets). When None the format/quality defaults apply.
+    #[serde(default)]
+    pub video_bitrate_kbps: Option<u32>,
+    /// Optional cursor motion-blur intensity (added in Screenforge v0.2).
+    /// 0 disables; higher values produce stronger trails.
+    #[serde(default)]
+    pub motion_blur: u32,
 }
 
 /// Export progress stages

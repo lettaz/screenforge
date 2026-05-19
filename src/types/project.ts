@@ -123,6 +123,22 @@ export interface KeystrokesOverlayConfig {
 }
 
 // =============================================================================
+// Background Music Types
+// =============================================================================
+
+export interface BackgroundMusicConfig {
+  enabled: boolean;
+  /** Local file URL (from `convertFileSrc`) for preview playback. */
+  audioUrl: string | null;
+  /** Absolute filesystem path used by the Rust export pipeline. */
+  audioPath: string | null;
+  /** Output volume in [0..1]. */
+  volume: number;
+  fadeInMs: number;
+  fadeOutMs: number;
+}
+
+// =============================================================================
 // Audio Types
 // =============================================================================
 
@@ -163,6 +179,12 @@ export interface ProjectConfig {
   clickEffects?: ClickEffectsConfig;
   /** On-screen keystrokes overlay configuration. Added in Screenforge v0.2. */
   keystrokesOverlay?: KeystrokesOverlayConfig;
+  /** Background music to mix into the exported video. Added in Screenforge v0.2. */
+  music?: BackgroundMusicConfig;
+  /** Cursor motion-blur intensity (0 = off). Added in Screenforge v0.2. */
+  motionBlur?: number;
+  /** Optional H.264 video bitrate override in kbps. Added in Screenforge v0.2. */
+  exportBitrateKbps?: number;
 }
 
 // =============================================================================
