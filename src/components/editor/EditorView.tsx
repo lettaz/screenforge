@@ -19,6 +19,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { CursorOverlay } from "./CursorOverlay";
 import { ClickIndicator } from "./ClickIndicator";
 import { WebcamOverlay } from "./WebcamOverlay";
+import { KeystrokeOverlay } from "./KeystrokeOverlay";
 import { Timeline } from "./timeline";
 import {
   CursorSmoother,
@@ -909,6 +910,14 @@ export default function EditorView() {
               videoHeight={videoHeight}
               containerWidth={previewSize.width}
               containerHeight={previewSize.height}
+            />
+          )}
+          {/* Keystroke overlay */}
+          {recordingBundle && recordingBundle.keystrokes && (
+            <KeystrokeOverlay
+              keystrokes={recordingBundle.keystrokes}
+              sourceTimeMs={sourceTimeMs}
+              config={project?.config.keystrokesOverlay}
             />
           )}
           </div>

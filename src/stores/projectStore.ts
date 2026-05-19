@@ -71,6 +71,13 @@ const defaultConfig: ProjectConfig = {
     soundUrl: null,
     soundVolume: 0.6,
   },
+  keystrokesOverlay: {
+    enabled: true,
+    position: "bottom",
+    theme: "dark",
+    visibleDurationMs: 1500,
+    maxChips: 8,
+  },
 };
 
 function generateId(): string {

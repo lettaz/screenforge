@@ -4,6 +4,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import {
   BookOpen,
   Image as ImageIcon,
+  Keyboard,
   MousePointer2,
   Palette,
   Sparkles,
@@ -12,6 +13,7 @@ import {
 import { useProjectStore } from "../../stores/projectStore";
 import PresetsSection from "./PresetsSection";
 import ClickEffectsSection from "./ClickEffectsSection";
+import KeystrokesSection from "./KeystrokesSection";
 import type {
   BackgroundType,
   GradientConfig,
@@ -25,6 +27,7 @@ type Section =
   | "shadow"
   | "aspect"
   | "clicks"
+  | "keys"
   | "presets";
 
 const SOLID_PRESETS: readonly string[] = [
@@ -133,6 +136,7 @@ export default function StylingPanel() {
             { id: "shadow", label: "Shadow", icon: Sparkles },
             { id: "aspect", label: "Aspect", icon: ImageIcon },
             { id: "clicks", label: "Clicks", icon: MousePointer2 },
+            { id: "keys", label: "Keys", icon: Keyboard },
             { id: "presets", label: "Presets", icon: BookOpen },
           ] as const
         ).map(({ id, label, icon: Icon }) => {
@@ -448,6 +452,8 @@ export default function StylingPanel() {
         )}
 
         {section === "clicks" && <ClickEffectsSection />}
+
+        {section === "keys" && <KeystrokesSection />}
 
         {section === "presets" && <PresetsSection />}
       </div>

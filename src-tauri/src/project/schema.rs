@@ -251,6 +251,59 @@ impl Default for ClickEffectsConfig {
 }
 
 // =============================================================================
+// Keystrokes Overlay Types
+// =============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum KeystrokesOverlayPosition {
+    Top,
+    Bottom,
+    Center,
+}
+
+impl Default for KeystrokesOverlayPosition {
+    fn default() -> Self {
+        Self::Bottom
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum KeystrokesOverlayTheme {
+    Dark,
+    Light,
+}
+
+impl Default for KeystrokesOverlayTheme {
+    fn default() -> Self {
+        Self::Dark
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KeystrokesOverlayConfig {
+    pub enabled: bool,
+    pub position: KeystrokesOverlayPosition,
+    pub theme: KeystrokesOverlayTheme,
+    pub visible_duration_ms: f64,
+    pub max_chips: u32,
+}
+
+impl Default for KeystrokesOverlayConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            position: KeystrokesOverlayPosition::default(),
+            theme: KeystrokesOverlayTheme::default(),
+            visible_duration_ms: 1500.0,
+            max_chips: 8,
+        }
+    }
+}
+
+// =============================================================================
 // Audio Types
 // =============================================================================
 
@@ -325,6 +378,9 @@ pub struct ProjectConfig {
     /// Click highlight effect config (added in Screenforge v0.2).
     #[serde(default)]
     pub click_effects: ClickEffectsConfig,
+    /// On-screen keystrokes overlay config (added in Screenforge v0.2).
+    #[serde(default)]
+    pub keystrokes_overlay: KeystrokesOverlayConfig,
 }
 
 impl Default for ProjectConfig {
@@ -340,6 +396,7 @@ impl Default for ProjectConfig {
             output_aspect_ratio: AspectRatio::default(),
             screen_radius: 16.0,
             click_effects: ClickEffectsConfig::default(),
+            keystrokes_overlay: KeystrokesOverlayConfig::default(),
         }
     }
 }

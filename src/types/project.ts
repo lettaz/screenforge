@@ -106,6 +106,23 @@ export interface ClickEffectsConfig {
 }
 
 // =============================================================================
+// Keystrokes Overlay Types
+// =============================================================================
+
+export type KeystrokesOverlayPosition = "top" | "bottom" | "center";
+export type KeystrokesOverlayTheme = "dark" | "light";
+
+export interface KeystrokesOverlayConfig {
+  enabled: boolean;
+  position: KeystrokesOverlayPosition;
+  theme: KeystrokesOverlayTheme;
+  /** Duration (ms) a chip stays visible after the keystroke. */
+  visibleDurationMs: number;
+  /** Maximum number of chips to render simultaneously. */
+  maxChips: number;
+}
+
+// =============================================================================
 // Audio Types
 // =============================================================================
 
@@ -144,6 +161,8 @@ export interface ProjectConfig {
   screenRadius?: number;
   /** Click highlight effect configuration. Added in Screenforge v0.2. */
   clickEffects?: ClickEffectsConfig;
+  /** On-screen keystrokes overlay configuration. Added in Screenforge v0.2. */
+  keystrokesOverlay?: KeystrokesOverlayConfig;
 }
 
 // =============================================================================

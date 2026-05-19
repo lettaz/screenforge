@@ -45,6 +45,16 @@ export interface MouseClickEvent {
   unixTimeMs: number;
 }
 
+// Keystroke event from recording
+export interface KeystrokeEvent {
+  type: "keyDown" | "keyUp";
+  character: string;
+  activeModifiers: string[];
+  isARepeat: boolean;
+  processTimeMs: number;
+  unixTimeMs: number;
+}
+
 // Cursor image info from recording
 export interface CursorInfo {
   id: string;
@@ -68,6 +78,8 @@ export interface RecordingBundle {
   mouseMoves: MouseMoveEvent[];
   mouseClicks: MouseClickEvent[];
   cursors: Record<string, CursorInfo>;
+  /** Keystroke events captured during recording. May be empty for older bundles. */
+  keystrokes: KeystrokeEvent[];
 
   // Metadata
   videoMetadata: VideoMetadata;

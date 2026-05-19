@@ -402,6 +402,20 @@ pub struct CursorInfo {
     pub height: u32,
 }
 
+/// Keystroke event from recording. Mirrors the TypeScript `Keystroke` shape.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KeystrokeEvent {
+    #[serde(rename = "type")]
+    pub event_type: String,
+    pub character: String,
+    pub active_modifiers: Vec<String>,
+    #[serde(default)]
+    pub is_a_repeat: bool,
+    pub process_time_ms: f64,
+    pub unix_time_ms: u64,
+}
+
 /// Complete recording bundle data
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -414,6 +428,10 @@ pub struct RecordingBundle {
     pub mouse_moves: Vec<MouseMoveEvent>,
     pub mouse_clicks: Vec<MouseClickEvent>,
     pub cursors: std::collections::HashMap<String, CursorInfo>,
+    /// Keystrokes captured by the input channel (empty for older recordings
+    /// or sessions that did not opt in to keystroke capture).
+    #[serde(default)]
+    pub keystrokes: Vec<KeystrokeEvent>,
     pub video_metadata: VideoMetadata,
 }
 
@@ -474,6 +492,17 @@ pub async fn load_recording_bundle(bundle_path: String) -> Result<RecordingBundl
     } else {
         HashMap::new()
     };
+
+    // Load keystrokes (optional — older bundles may not contain this file)
+    let keystrokes_path = recording_dir.join("recording-0-keystrokes.json");
+    let keystrokes: Vec<KeystrokeEvent> = if keystrokes_path.exists() {
+        let content = fs::read_to_string(&keystrokes_path)
+            .map_err(|e| format!("Failed to read keystrokes: {}", e))?;
+        serde_json::from_str(&content)
+            .map_err(|e| format!("Failed to parse keystrokes: {}", e))?
+    } else {
+        Vec::new()
+    };
     
     // Find webcam and audio files
     let webcam_video_path = recording_dir.join("recording-0-webcam.mp4");
@@ -481,10 +510,11 @@ pub async fn load_recording_bundle(bundle_path: String) -> Result<RecordingBundl
     let system_audio_path = recording_dir.join("recording-0-system.m4a");
     
     tracing::info!(
-        "Loaded recording bundle: {} mouse moves, {} clicks, {} cursors, webcam={}",
+        "Loaded recording bundle: {} mouse moves, {} clicks, {} cursors, {} keystrokes, webcam={}",
         mouse_moves.len(),
         mouse_clicks.len(),
         cursors.len(),
+        keystrokes.len(),
         webcam_video_path.exists()
     );
     
@@ -509,6 +539,7 @@ pub async fn load_recording_bundle(bundle_path: String) -> Result<RecordingBundl
         mouse_moves,
         mouse_clicks,
         cursors,
+        keystrokes,
         video_metadata,
     })
 }
