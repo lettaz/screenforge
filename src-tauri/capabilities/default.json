@@ -24,6 +24,22 @@
         { "path": "$TEMP/**" },
         { "path": "$HOME/**" }
       ]
+    },
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "/tmp/**" },
+        { "path": "$TEMP/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "/tmp/**" },
+        { "path": "$TEMP/**" }
+      ]
     }
   ]
 }

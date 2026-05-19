@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { Image as ImageIcon, Palette, Sparkles, Square } from "lucide-react";
+import {
+  BookOpen,
+  Image as ImageIcon,
+  Palette,
+  Sparkles,
+  Square,
+} from "lucide-react";
 import { useProjectStore } from "../../stores/projectStore";
+import PresetsSection from "./PresetsSection";
 import type {
   BackgroundType,
   GradientConfig,
@@ -10,7 +17,7 @@ import type {
   ShadowConfig,
 } from "../../types/project";
 
-type Section = "background" | "frame" | "shadow" | "aspect";
+type Section = "background" | "frame" | "shadow" | "aspect" | "presets";
 
 const SOLID_PRESETS: readonly string[] = [
   "#0F172A",
@@ -110,13 +117,14 @@ export default function StylingPanel() {
         <p className="text-xs text-white/40 mt-0.5">Live preview, auto-saved</p>
       </div>
 
-      <nav className="flex border-b border-border text-xs">
+      <nav className="flex border-b border-border text-[10px]">
         {(
           [
-            { id: "background", label: "Background", icon: Palette },
+            { id: "background", label: "Bg", icon: Palette },
             { id: "frame", label: "Frame", icon: Square },
             { id: "shadow", label: "Shadow", icon: Sparkles },
             { id: "aspect", label: "Aspect", icon: ImageIcon },
+            { id: "presets", label: "Presets", icon: BookOpen },
           ] as const
         ).map(({ id, label, icon: Icon }) => {
           const active = section === id;
@@ -429,6 +437,8 @@ export default function StylingPanel() {
             </p>
           </>
         )}
+
+        {section === "presets" && <PresetsSection />}
       </div>
     </aside>
   );
