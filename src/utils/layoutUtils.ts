@@ -251,3 +251,134 @@ export const LAYOUT_TYPES: LayoutType[] = [
   "screen-with-camera",
   "side-by-side",
 ];
+
+/**
+ * Snapshot of layout state at a moment in time, possibly mid-transition.
+ *
+ * - When no transition is active, `to` is null and `progress` is 0.
+ * - When inside a transition window, both layouts are populated and
+ *   `progress` ramps from 0 → 1 over the configured duration.
+ * - `cameraOpacity` and `screenOpacity` are derived for the caller so
+ *   visibility flips (e.g. screen-with-camera → camera-only) crossfade
+ *   smoothly instead of snapping.
+ */
+export interface LayoutTransitionState {
+  current: Layout | null;
+  next: Layout | null;
+  progress: number;
+  cameraOpacity: number;
+  screenOpacity: number;
+}
+
+const DEFAULT_TRANSITION_MS = 400;
+
+function easeInOut(t: number): number {
+  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+function cameraVisibleForType(type: LayoutType): boolean {
+  return type !== "screen-only";
+}
+
+function screenVisibleForType(type: LayoutType): boolean {
+  return type !== "camera-only";
+}
+
+/**
+ * Compute the layout transition state for the given output time. Pass
+ * `transitionDurationMs` from `ProjectConfig.layoutTransitionMs`.
+ */
+export function getLayoutTransitionState(
+  layouts: Layout[],
+  outputTimeMs: number,
+  transitionDurationMs: number = DEFAULT_TRANSITION_MS,
+): LayoutTransitionState {
+  if (layouts.length === 0) {
+    return {
+      current: null,
+      next: null,
+      progress: 0,
+      cameraOpacity: 1,
+      screenOpacity: 1,
+    };
+  }
+
+  const transitionMs = Math.max(0, transitionDurationMs);
+
+  // Walk in order — layouts are assumed non-overlapping and time-sorted.
+  for (let i = 0; i < layouts.length; i += 1) {
+    const layout = layouts[i];
+    if (outputTimeMs < layout.startTime || outputTimeMs >= layout.endTime) {
+      continue;
+    }
+
+    const next = layouts[i + 1] ?? null;
+    if (!next || transitionMs === 0) {
+      return {
+        current: layout,
+        next: null,
+        progress: 0,
+        cameraOpacity: cameraVisibleForType(layout.type) ? 1 : 0,
+        screenOpacity: screenVisibleForType(layout.type) ? 1 : 0,
+      };
+    }
+
+    const transitionStart = Math.max(
+      layout.startTime,
+      layout.endTime - transitionMs,
+    );
+    if (outputTimeMs < transitionStart) {
+      return {
+        current: layout,
+        next: null,
+        progress: 0,
+        cameraOpacity: cameraVisibleForType(layout.type) ? 1 : 0,
+        screenOpacity: screenVisibleForType(layout.type) ? 1 : 0,
+      };
+    }
+
+    const rawProgress =
+      (outputTimeMs - transitionStart) / Math.max(1, layout.endTime - transitionStart);
+    const progress = easeInOut(Math.min(1, Math.max(0, rawProgress)));
+
+    const fromCam = cameraVisibleForType(layout.type) ? 1 : 0;
+    const toCam = cameraVisibleForType(next.type) ? 1 : 0;
+    const fromScr = screenVisibleForType(layout.type) ? 1 : 0;
+    const toScr = screenVisibleForType(next.type) ? 1 : 0;
+
+    return {
+      current: layout,
+      next,
+      progress,
+      cameraOpacity: fromCam + (toCam - fromCam) * progress,
+      screenOpacity: fromScr + (toScr - fromScr) * progress,
+    };
+  }
+
+  return {
+    current: null,
+    next: null,
+    progress: 0,
+    cameraOpacity: 1,
+    screenOpacity: 1,
+  };
+}
+
+/**
+ * Interpolate two camera rectangles (in the same container space). Used
+ * during a layout transition so the webcam glides between PiP positions
+ * (or PiP → side-by-side) rather than snapping.
+ */
+export function lerpCameraRect(
+  from: CameraRect,
+  to: CameraRect,
+  t: number,
+): CameraRect {
+  return {
+    x: from.x + (to.x - from.x) * t,
+    y: from.y + (to.y - from.y) * t,
+    width: from.width + (to.width - from.width) * t,
+    height: from.height + (to.height - from.height) * t,
+    visible: t < 0.5 ? from.visible : to.visible,
+  };
+}

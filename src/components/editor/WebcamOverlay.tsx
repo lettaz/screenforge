@@ -7,23 +7,27 @@
 
 import { useRef, useEffect, useState, useMemo } from "react";
 import type { Layout } from "../../types/project";
-import { calculateLayoutPositions } from "../../utils/layoutUtils";
+import {
+  calculateLayoutPositions,
+  lerpCameraRect,
+} from "../../utils/layoutUtils";
 
 interface WebcamOverlayProps {
-  /** URL to the webcam video source */
   webcamSrc: string;
-  /** Current playback time in milliseconds */
   currentTimeMs: number;
-  /** Whether video is currently playing */
   isPlaying: boolean;
-  /** Screen video dimensions for positioning */
   videoWidth: number;
   videoHeight: number;
-  /** Preview container dimensions */
   containerWidth: number;
   containerHeight: number;
   /** Current layout (optional - uses default if not provided) */
   currentLayout?: Layout | null;
+  /** Next layout — when set, the overlay tweens between `currentLayout` and `nextLayout`. */
+  nextLayout?: Layout | null;
+  /** Transition progress in [0..1]. 0 = fully current, 1 = fully next. */
+  transitionProgress?: number;
+  /** Opacity multiplier (used to crossfade camera visibility across type changes). */
+  opacity?: number;
   /** Corner radius as percentage of webcam width (default 0.08 = 8%) */
   cornerRadius?: number;
 }
@@ -63,6 +67,9 @@ export function WebcamOverlay({
   containerWidth,
   containerHeight,
   currentLayout,
+  nextLayout,
+  transitionProgress = 0,
+  opacity = 1,
   cornerRadius = 0.08,
 }: WebcamOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -122,17 +129,30 @@ export function WebcamOverlay({
   const scaledVideoWidth = videoWidth * scale;
   const scaledVideoHeight = videoHeight * scale;
 
-  // Calculate layout positions within the scaled video area
+  // Calculate layout positions within the scaled video area. If a next layout
+  // is provided with a positive transition progress, lerp the camera rect.
   const layoutInfo = useMemo(() => {
-    return calculateLayoutPositions(
+    const current = calculateLayoutPositions(
       currentLayout ?? null,
       scaledVideoWidth,
       scaledVideoHeight,
     );
-  }, [currentLayout, scaledVideoWidth, scaledVideoHeight]);
+    if (!nextLayout || transitionProgress <= 0) {
+      return current;
+    }
+    const next = calculateLayoutPositions(
+      nextLayout,
+      scaledVideoWidth,
+      scaledVideoHeight,
+    );
+    return {
+      ...current,
+      camera: lerpCameraRect(current.camera, next.camera, transitionProgress),
+    };
+  }, [currentLayout, nextLayout, transitionProgress, scaledVideoWidth, scaledVideoHeight]);
 
-  // If camera is not visible in this layout, don't render
-  if (!layoutInfo.camera.visible) {
+  // If the camera is fully invisible (no visibility AND no opacity remaining), bail.
+  if (!layoutInfo.camera.visible && opacity <= 0) {
     return null;
   }
 
@@ -181,6 +201,7 @@ export function WebcamOverlay({
           width: webcamWidth,
           height: isFillMode ? webcamHeight : adjustedHeight,
           borderRadius: borderRadius,
+          opacity: Math.max(0, Math.min(1, opacity)),
           boxShadow: showRoundedCorners
             ? "0 4px 20px rgba(0, 0, 0, 0.4)"
             : "none",

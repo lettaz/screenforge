@@ -87,6 +87,7 @@ const defaultConfig: ProjectConfig = {
     fadeInMs: 500,
     fadeOutMs: 1000,
   },
+  layoutTransitionMs: 400,
 };
 
 function generateId(): string {

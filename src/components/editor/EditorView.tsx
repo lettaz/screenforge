@@ -45,7 +45,7 @@ import {
   outputTimeToSource,
   calculateTotalDuration,
 } from "../../utils/sliceUtils";
-import { findLayoutAtTime } from "../../utils/layoutUtils";
+import { getLayoutTransitionState } from "../../utils/layoutUtils";
 
 export default function EditorView() {
   const {
@@ -132,10 +132,19 @@ export default function EditorView() {
     return outputTimeToSource(slices, currentTimeMs);
   }, [slices, currentTimeMs]);
 
-  // Find the current layout at the current output time
-  const currentLayout = useMemo(() => {
-    return findLayoutAtTime(layouts, currentTimeMs);
-  }, [layouts, currentTimeMs]);
+  // Resolve the layout transition state for the current output time. This
+  // returns the active layout, an optional `next` (during the transition
+  // window), and crossfade opacities so the preview tweens smoothly between
+  // layouts instead of snapping at boundaries.
+  const layoutTransition = useMemo(
+    () =>
+      getLayoutTransitionState(
+        layouts,
+        currentTimeMs,
+        project?.config.layoutTransitionMs ?? 400,
+      ),
+    [layouts, currentTimeMs, project?.config.layoutTransitionMs],
+  );
 
   // Update total duration when slices change
   useEffect(() => {
@@ -835,6 +844,7 @@ export default function EditorView() {
               ref={videoRef}
               src={videoSrc}
               className="absolute inset-0 w-full h-full object-contain"
+              style={{ opacity: layoutTransition.screenOpacity }}
               onTimeUpdate={handleVideoTimeUpdate}
               onPlay={() => play()}
               onPause={() => pause()}
@@ -888,7 +898,10 @@ export default function EditorView() {
               videoHeight={videoHeight}
               containerWidth={previewSize.width}
               containerHeight={previewSize.height}
-              currentLayout={currentLayout}
+              currentLayout={layoutTransition.current}
+              nextLayout={layoutTransition.next}
+              transitionProgress={layoutTransition.progress}
+              opacity={layoutTransition.cameraOpacity}
             />
           )}
 

@@ -185,6 +185,8 @@ export interface ProjectConfig {
   motionBlur?: number;
   /** Optional H.264 video bitrate override in kbps. Added in Screenforge v0.2. */
   exportBitrateKbps?: number;
+  /** Crossfade / position-tween duration between layouts (ms). Added in Screenforge v0.2. */
+  layoutTransitionMs?: number;
 }
 
 // =============================================================================
