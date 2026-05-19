@@ -138,6 +138,11 @@ pub async fn start_export_with_edits(
     tracing::info!("Export options: {:?}", options);
     tracing::info!("Edits: {} segments", edits.segments.len());
 
+    // TODO(Screenforge #21): apply Scene.blur_regions during ffmpeg filter
+    // graph build (split -> crop -> boxblur -> overlay with `enable=between(t,start,end)`).
+    // The project bundle round-trips blur_regions today; only the export
+    // burn-in is missing.
+
     // Calculate total output duration for progress reporting
     let total_duration_ms = edits.total_output_duration_ms();
     let total_duration_us = total_duration_ms * 1000; // FFmpeg reports in microseconds

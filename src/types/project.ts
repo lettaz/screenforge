@@ -209,6 +209,27 @@ export interface Layout {
 
 export type SceneType = "recording" | "title" | "transition";
 
+export type BlurRegionStyle = "blur" | "pixelate" | "solid";
+
+export interface BlurRegion {
+  id: string;
+  /** Output-time start (ms). */
+  startTime: number;
+  /** Output-time end (ms). */
+  endTime: number;
+  /** Position/size in normalized [0..1] of the screen frame. */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  style: BlurRegionStyle;
+  /** Blur intensity in pixels (only for `style === "blur"`). */
+  intensity: number;
+  /** Solid fill color (only for `style === "solid"`). */
+  color?: string;
+  label?: string;
+}
+
 export interface Scene {
   id: string;
   name: string;
@@ -220,6 +241,8 @@ export interface Scene {
   cameraSlices: Slice[];
   zoomRanges: ZoomRange[];
   layouts: Layout[];
+  /** Blur / pixelate / solid masks bound to time ranges. Added in Screenforge v0.2. */
+  blurRegions?: BlurRegion[];
 }
 
 // =============================================================================

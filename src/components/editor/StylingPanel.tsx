@@ -3,6 +3,7 @@ import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import {
   BookOpen,
+  EyeOff,
   Image as ImageIcon,
   Keyboard,
   MousePointer2,
@@ -14,6 +15,7 @@ import { useProjectStore } from "../../stores/projectStore";
 import PresetsSection from "./PresetsSection";
 import ClickEffectsSection from "./ClickEffectsSection";
 import KeystrokesSection from "./KeystrokesSection";
+import BlurRegionsSection from "./BlurRegionsSection";
 import type {
   BackgroundType,
   GradientConfig,
@@ -28,6 +30,7 @@ type Section =
   | "aspect"
   | "clicks"
   | "keys"
+  | "privacy"
   | "presets";
 
 const SOLID_PRESETS: readonly string[] = [
@@ -128,7 +131,7 @@ export default function StylingPanel() {
         <p className="text-xs text-white/40 mt-0.5">Live preview, auto-saved</p>
       </div>
 
-      <nav className="flex border-b border-border text-[10px]">
+      <nav className="flex flex-wrap border-b border-border text-[10px]">
         {(
           [
             { id: "background", label: "Bg", icon: Palette },
@@ -137,6 +140,7 @@ export default function StylingPanel() {
             { id: "aspect", label: "Aspect", icon: ImageIcon },
             { id: "clicks", label: "Clicks", icon: MousePointer2 },
             { id: "keys", label: "Keys", icon: Keyboard },
+            { id: "privacy", label: "Privacy", icon: EyeOff },
             { id: "presets", label: "Presets", icon: BookOpen },
           ] as const
         ).map(({ id, label, icon: Icon }) => {
@@ -146,7 +150,7 @@ export default function StylingPanel() {
               key={id}
               type="button"
               onClick={() => setSection(id)}
-              className={`flex-1 flex flex-col items-center gap-1 py-2 transition-colors ${
+              className={`basis-1/4 grow flex flex-col items-center gap-1 py-2 transition-colors ${
                 active
                   ? "bg-accent/10 text-white border-b-2 border-accent"
                   : "text-white/50 hover:text-white"
@@ -454,6 +458,8 @@ export default function StylingPanel() {
         {section === "clicks" && <ClickEffectsSection />}
 
         {section === "keys" && <KeystrokesSection />}
+
+        {section === "privacy" && <BlurRegionsSection />}
 
         {section === "presets" && <PresetsSection />}
       </div>

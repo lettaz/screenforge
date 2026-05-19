@@ -17,6 +17,7 @@ interface EditorState {
   // Selection state
   selectedSliceId: string | null;
   selectedLayoutId: string | null;
+  selectedBlurRegionId: string | null;
 
   // Tool state
   activeTool: EditorTool;
@@ -29,6 +30,7 @@ interface EditorState {
   setTimelineScrollX: (scrollX: number) => void;
   selectSlice: (id: string | null) => void;
   selectLayout: (id: string | null) => void;
+  selectBlurRegion: (id: string | null) => void;
   setActiveTool: (tool: EditorTool) => void;
   setDragState: (state: DragState | null) => void;
   clearSelection: () => void;
@@ -40,6 +42,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   timelineScrollX: 0,
   selectedSliceId: null,
   selectedLayoutId: null,
+  selectedBlurRegionId: null,
   activeTool: "select",
   dragState: null,
 
@@ -54,14 +57,31 @@ export const useEditorStore = create<EditorState>((set) => ({
     set({ timelineScrollX: Math.max(0, scrollX) });
   },
 
-  // Select a slice (clears layout selection)
+  // Select a slice (clears other selections)
   selectSlice: (id: string | null) => {
-    set({ selectedSliceId: id, selectedLayoutId: null });
+    set({
+      selectedSliceId: id,
+      selectedLayoutId: null,
+      selectedBlurRegionId: null,
+    });
   },
 
-  // Select a layout (clears slice selection)
+  // Select a layout (clears other selections)
   selectLayout: (id: string | null) => {
-    set({ selectedLayoutId: id, selectedSliceId: null });
+    set({
+      selectedLayoutId: id,
+      selectedSliceId: null,
+      selectedBlurRegionId: null,
+    });
+  },
+
+  // Select a blur region (clears other selections)
+  selectBlurRegion: (id: string | null) => {
+    set({
+      selectedBlurRegionId: id,
+      selectedSliceId: null,
+      selectedLayoutId: null,
+    });
   },
 
   // Set active tool
@@ -76,6 +96,10 @@ export const useEditorStore = create<EditorState>((set) => ({
 
   // Clear all selections
   clearSelection: () => {
-    set({ selectedSliceId: null, selectedLayoutId: null });
+    set({
+      selectedSliceId: null,
+      selectedLayoutId: null,
+      selectedBlurRegionId: null,
+    });
   },
 }));

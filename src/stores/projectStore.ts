@@ -10,6 +10,7 @@ import type {
   Slice,
   Layout,
   Scene,
+  BlurRegion,
 } from "../types/project";
 import { generateSliceId, createDefaultSlice } from "../utils/sliceUtils";
 
@@ -160,11 +161,21 @@ interface ProjectState {
     splitTimeMs: number,
   ) => void;
 
+  // Blur region actions
+  addBlurRegion: (sceneIndex: number, region: BlurRegion) => void;
+  updateBlurRegion: (
+    sceneIndex: number,
+    regionId: string,
+    updates: Partial<BlurRegion>,
+  ) => void;
+  removeBlurRegion: (sceneIndex: number, regionId: string) => void;
+
   // Helpers
   getActiveScene: () => Scene | null;
   getScreenSlices: () => Slice[];
   getCameraSlices: () => Slice[];
   getLayouts: () => Layout[];
+  getBlurRegions: () => BlurRegion[];
 }
 
 /**
@@ -815,5 +826,57 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   getLayouts: () => {
     const scene = get().getActiveScene();
     return scene?.layouts ?? [];
+  },
+
+  // Get blur regions from the active scene
+  getBlurRegions: () => {
+    const scene = get().getActiveScene();
+    return scene?.blurRegions ?? [];
+  },
+
+  addBlurRegion: (sceneIndex: number, region: BlurRegion) => {
+    const { project } = get();
+    if (!project || sceneIndex < 0 || sceneIndex >= project.scenes.length)
+      return;
+    const scene = project.scenes[sceneIndex];
+    const newScenes = [...project.scenes];
+    newScenes[sceneIndex] = {
+      ...scene,
+      blurRegions: [...(scene.blurRegions ?? []), region],
+    };
+    set({ project: { ...project, scenes: newScenes } });
+    triggerAutoSave(get);
+  },
+
+  updateBlurRegion: (
+    sceneIndex: number,
+    regionId: string,
+    updates: Partial<BlurRegion>,
+  ) => {
+    const { project } = get();
+    if (!project || sceneIndex < 0 || sceneIndex >= project.scenes.length)
+      return;
+    const scene = project.scenes[sceneIndex];
+    const regions = scene.blurRegions ?? [];
+    const idx = regions.findIndex((r) => r.id === regionId);
+    if (idx < 0) return;
+    const newRegions = [...regions];
+    newRegions[idx] = { ...newRegions[idx], ...updates };
+    const newScenes = [...project.scenes];
+    newScenes[sceneIndex] = { ...scene, blurRegions: newRegions };
+    set({ project: { ...project, scenes: newScenes } });
+    triggerAutoSave(get);
+  },
+
+  removeBlurRegion: (sceneIndex: number, regionId: string) => {
+    const { project } = get();
+    if (!project || sceneIndex < 0 || sceneIndex >= project.scenes.length)
+      return;
+    const scene = project.scenes[sceneIndex];
+    const newRegions = (scene.blurRegions ?? []).filter((r) => r.id !== regionId);
+    const newScenes = [...project.scenes];
+    newScenes[sceneIndex] = { ...scene, blurRegions: newRegions };
+    set({ project: { ...project, scenes: newScenes } });
+    triggerAutoSave(get);
   },
 }));

@@ -469,6 +469,44 @@ pub enum SceneType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum BlurRegionStyle {
+    Blur,
+    Pixelate,
+    Solid,
+}
+
+impl Default for BlurRegionStyle {
+    fn default() -> Self {
+        Self::Blur
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BlurRegion {
+    pub id: String,
+    /// Output-time start (ms).
+    pub start_time: f64,
+    /// Output-time end (ms).
+    pub end_time: f64,
+    /// Normalized x in [0..1] relative to the screen frame.
+    pub x: f64,
+    /// Normalized y in [0..1] relative to the screen frame.
+    pub y: f64,
+    /// Normalized width in [0..1] relative to the screen frame.
+    pub width: f64,
+    /// Normalized height in [0..1] relative to the screen frame.
+    pub height: f64,
+    pub style: BlurRegionStyle,
+    pub intensity: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Scene {
     pub id: String,
@@ -483,6 +521,9 @@ pub struct Scene {
     pub camera_slices: Vec<Slice>,
     pub zoom_ranges: Vec<ZoomRange>,
     pub layouts: Vec<Layout>,
+    /// Blur / pixelate / solid masks bound to time ranges. Added in Screenforge v0.2.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub blur_regions: Vec<BlurRegion>,
 }
 
 // =============================================================================

@@ -20,6 +20,7 @@ import { CursorOverlay } from "./CursorOverlay";
 import { ClickIndicator } from "./ClickIndicator";
 import { WebcamOverlay } from "./WebcamOverlay";
 import { KeystrokeOverlay } from "./KeystrokeOverlay";
+import BlurRegionsOverlay from "./BlurRegionsOverlay";
 import { Timeline } from "./timeline";
 import {
   CursorSmoother,
@@ -54,8 +55,13 @@ export default function EditorView() {
     getScreenSlices,
     getCameraSlices,
     getLayouts,
+    getBlurRegions,
+    updateBlurRegion,
+    activeSceneIndex,
     openProject,
   } = useProjectStore();
+  const selectedBlurRegionId = useEditorStore((s) => s.selectedBlurRegionId);
+  const selectBlurRegion = useEditorStore((s) => s.selectBlurRegion);
 
   const {
     currentTimeMs,
@@ -920,6 +926,19 @@ export default function EditorView() {
               config={project?.config.keystrokesOverlay}
             />
           )}
+          {/* Blur regions overlay */}
+          <BlurRegionsOverlay
+            regions={getBlurRegions()}
+            currentTimeMs={currentTimeMs}
+            selectedId={selectedBlurRegionId}
+            onSelect={selectBlurRegion}
+            onMove={(id, x, y) =>
+              updateBlurRegion(activeSceneIndex, id, { x, y })
+            }
+            onResize={(id, width, height) =>
+              updateBlurRegion(activeSceneIndex, id, { width, height })
+            }
+          />
           </div>
           </div>
         </div>
