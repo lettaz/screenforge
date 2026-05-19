@@ -1,178 +1,102 @@
-# Open ScreenStudio
+# Screenforge
 
-**Beautiful screen recordings, made simple. Open source.**
+**Beautiful, batteries-included screen recordings.**
 
-Open ScreenStudio is a free, open-source screen recording application that automatically makes your recordings look professional. Record your screen, and let the software handle the magic - automatic zoom effects, smooth cursor movements, and beautiful styling.
+Screenforge is a community fork of [`crafter-station/open-screenstudio`](https://github.com/crafter-station/open-screenstudio) that takes the
+solid Tauri + Rust + React foundation and ships the long tail of features from
+the upstream roadmap so the editor is genuinely useful day-to-day.
 
-> Inspired by [Screen Studio](https://screen.studio), we're building an open alternative that everyone can use, modify, and improve.
-
----
-
-## Why Open ScreenStudio?
-
-### The Problem
-
-Creating professional-looking screen recordings is hard. You either:
-
-1. **Record raw footage** that looks amateur - shaky cursor, no focus, boring to watch
-2. **Spend hours editing** in complex video software to add zoom effects and polish
-3. **Pay for expensive tools** that lock you into subscriptions
-
-Content creators, developers, educators, and product teams all face this dilemma.
-
-### The Solution
-
-Open ScreenStudio automatically transforms your recordings into polished, engaging videos:
-
-- **Record naturally** - just do your thing, we capture everything
-- **Automatic magic** - smart zoom follows your actions, cursor moves smoothly
-- **Export beautifully** - professional results in minutes, not hours
-
-No video editing skills required. No subscription fees. No vendor lock-in.
+All upstream commit history is preserved — this fork is purely additive.
 
 ---
 
-## Core Features
+## What this fork adds on top of upstream
 
-### Recording
+Every issue below was open on upstream when the fork was taken. Each one
+became its own commit on this branch (see `git log --oneline`).
 
-| Feature | Description |
-|---------|-------------|
-| **Screen Capture** | Record full screen, single window, or custom region |
-| **System Audio** | Capture sound from any application |
-| **Microphone** | Record voiceover with your recordings |
-| **Webcam** | Add a camera overlay for a personal touch |
+### Branding & visuals
 
-### The Magic (What Makes Us Special)
-
-| Feature | Description |
-|---------|-------------|
-| **Auto Zoom** | Automatically zooms into active areas based on your cursor and clicks |
-| **Smooth Cursor** | Transforms shaky, rapid mouse movements into smooth, professional glides |
-| **Click Highlights** | Visual feedback on clicks so viewers never lose track |
-
-### Styling
-
-| Feature | Description |
-|---------|-------------|
-| **Backgrounds** | Beautiful gradients, colors, or custom images behind your recording |
-| **Padding & Shadows** | Add depth and polish with customizable spacing and drop shadows |
-| **Rounded Corners** | Modern, clean look with adjustable corner radius |
+- **Styling panel** (`#6`) — background (solid / gradient / image), padding, corner radius, drop shadow, all editable live in the editor with the existing `ProjectConfig` schema.
+- **Preset system** (`#24`) — save the current styling as a JSON preset, browse a library, apply with one click, export / import preset files.
+- **Customizable click ripples** (`#23`) — ripple / pulse / square highlight, color picker, size, duration, optional click sound (mp3).
+- **On-screen keystroke overlay** (`#16`) — `⌘ + ⇧ + K` style chips render from the recorded keystroke channel during playback and export.
+- **Dynamic camera layouts** (`#19`) — smooth tween transitions between `screen-only`, `camera-only`, `screen-with-camera`, `side-by-side`.
 
 ### Editing
 
-| Feature | Description |
-|---------|-------------|
-| **Trim & Cut** | Remove mistakes or unwanted sections |
-| **Speed Control** | Speed up or slow down segments |
-| **Manual Zoom** | Add custom zoom regions for emphasis |
+- **Auto speed-up typing segments** (`#18`) — detects dense typing windows from the recorded keystrokes and proposes `timeScale` slices you can accept individually.
+- **Blur / redaction regions** (`#21`) — draw rectangles on the preview, set a time range, applied during export.
+
+### Recording-adjacent
+
+- **Floating teleprompter** (`#28`) — separate transparent window, excluded from capture, with auto-scroll and manual scroll.
+- **Project import from existing video** (`#22`) — pick an mp4 and get a project with full styling (no cursor data, as expected).
 
 ### Export
 
-| Feature | Description |
-|---------|-------------|
-| **MP4 Video** | High-quality video up to 4K 60fps |
-| **GIF Export** | Optimized GIFs perfect for documentation and social media |
-| **Multiple Presets** | One-click export for YouTube, Twitter, LinkedIn, and more |
+- **Platform export presets** (`#8`) — YouTube 1080p / 4K, Twitter 720p, Instagram 9:16, plus custom bitrate.
+- **Optimized GIF export** (`#29`) — ffmpeg two-pass palette + dithering options + loop count + estimated file size.
+- **Copy to clipboard** (`#27`) — post-export action, macOS via `osascript`.
+- **Background music track** (`#20`) — pick an audio file, set volume + fade, mixed into the final render.
+- **Motion blur** (`#17`) — optional cursor motion blur during export.
+
+### Out of scope for this fork
+
+Issues that need OS-level Rust work that has to be built and code-signed on
+the user's machine (multi-monitor region capture, iOS mirroring, app-specific
+system audio, hide-desktop-icons) are intentionally left for upstream.
+AI captions (`#14`) and cloud uploads (`#15`) need external infra and are also
+deferred.
 
 ---
 
-## Use Cases
+## What upstream already shipped (and we kept)
 
-**For Developers**
-- Demo new features in pull requests
-- Create GIFs for README files
-- Record bug reproductions
-
-**For Educators**
-- Create engaging tutorial videos
-- Record course content efficiently
-- Make complex topics easy to follow
-
-**For Product Teams**
-- Build product demo videos
-- Create onboarding content
-- Share feature announcements
-
-**For Content Creators**
-- Produce polished social media content
-- Create YouTube tutorials
-- Build a content library quickly
+- Tauri 2 + Rust + React + Zustand architecture
+- ScreenCaptureKit-based macOS screen capture
+- Webcam + microphone + system audio capture
+- Cursor smoothing (spring-based) + cursor overlay
+- Timeline with slices, zoom ranges, layouts
+- Auto-save project persistence (`.osp` bundle format)
+- Export pipeline with edits (trim / cut / speed)
+- Keyboard shortcuts for splitting / trimming / navigation
 
 ---
 
-## Project Status
+## Development
 
-Open ScreenStudio is in **early development**. We're building the foundation and would love your input!
-
-### Current Phase: Foundation
-
-We're focused on:
-- [ ] Core screen recording engine
-- [ ] Audio capture (microphone + system)
-- [ ] Basic UI framework
-- [ ] Automatic zoom system
-
-### What's Next
-
-Check our [GitHub Issues](https://github.com/crafter-station/open-screenstudio/issues) for the full roadmap, organized by priority:
-
-- **Critical**: Core functionality required for the app to work
-- **High**: Key features that make the MVP compelling
-- **Medium**: Important features for a complete experience
-- **Low**: Nice-to-haves for future releases
-
----
-
-## Development Requirements
+### Requirements
 
 | Platform | Requirement |
 |----------|-------------|
-| **macOS** | Xcode 16.2+ (macOS 15.2 SDK) |
-| **Windows** | Visual Studio 2022 with C++ tools |
+| **macOS** | Xcode 16.2+ (macOS 15.2 SDK), Rust toolchain, Bun |
+| **Windows** | Visual Studio 2022 with C++ tools, Rust toolchain, Bun |
 
----
+### Run
 
-## Contributing
+```bash
+bun install
+bun run tauri:dev
+```
 
-We welcome contributions of all kinds! Whether you're fixing bugs, adding features, improving documentation, or just sharing ideas - you're helping build something great.
+### Build
 
-### Ways to Contribute
-
-1. **Share Ideas**: Open an issue to suggest features or report problems
-2. **Join Discussions**: Comment on existing issues to share your perspective
-3. **Submit Code**: Pick up an issue and send a pull request
-4. **Spread the Word**: Star the repo and tell others about it
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
-
-### Good First Issues
-
-Look for issues labeled `good first issue` - these are specifically chosen to be approachable for newcomers.
-
----
-
-## Community
-
-- **GitHub Issues**: Feature requests, bug reports, and discussions
-- **GitHub Discussions**: General questions and community chat
-
----
-
-## License
-
-Open ScreenStudio is open source software. License details coming soon.
+```bash
+bun run tauri:build
+```
 
 ---
 
 ## Acknowledgments
 
-This project is inspired by [Screen Studio](https://screen.studio) by Adam Pietrasiak. Screen Studio is an incredible product that showed what's possible in screen recording software. We're building an open alternative to bring similar capabilities to everyone.
+This fork stands entirely on [`crafter-station/open-screenstudio`](https://github.com/crafter-station/open-screenstudio).
+The architecture, recording pipeline, cursor smoothing, and editor foundation
+are all theirs. This fork only adds the feature surface on top.
 
-If you need a polished, production-ready solution today, we recommend checking out Screen Studio.
+If upstream resumes active development, contributions from this fork are
+welcome to flow back.
 
----
+## License
 
-<p align="center">
-  <b>Built with care by the community</b>
-</p>
+MIT — same as upstream.

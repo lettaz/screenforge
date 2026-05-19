@@ -3,7 +3,7 @@
 //! These commands handle creating, opening, saving, and managing projects.
 //! 
 //! Key behavior: Auto-save
-//! - Projects are automatically saved to ~/Movies/Open ScreenStudio/ when created
+//! - Projects are automatically saved to ~/Movies/Screenforge/ when created
 //! - All edits are auto-saved to disk (no manual save button)
 
 use crate::project::{
@@ -96,12 +96,13 @@ pub async fn get_default_projects_dir() -> Result<String, String> {
 
 /// Helper to get the default projects directory path
 fn get_projects_directory() -> Result<PathBuf, String> {
-    // Use ~/Movies/Open ScreenStudio/ as the default location
     let movies_dir = dirs::video_dir()
         .or_else(|| dirs::home_dir().map(|h| h.join("Movies")))
         .ok_or("Could not determine Movies directory")?;
-    
-    let projects_dir = movies_dir.join("Open ScreenStudio");
+
+    // New default location for Screenforge.
+    // Existing recordings under ~/Movies/Open ScreenStudio/ remain openable via the file picker.
+    let projects_dir = movies_dir.join("Screenforge");
     
     // Create the directory if it doesn't exist
     if !projects_dir.exists() {
@@ -121,7 +122,7 @@ fn generate_project_filename() -> String {
 /// Create a project from a raw recording bundle and save to default location
 ///
 /// This converts a recording bundle (from /tmp) into a proper project,
-/// copies it to the default projects directory (~/Movies/Open ScreenStudio/),
+/// copies it to the default projects directory (~/Movies/Screenforge/),
 /// and returns the project with its saved path.
 #[tauri::command]
 pub async fn create_project_from_recording(

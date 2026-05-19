@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Open ScreenStudio",
-  "version": "0.1.0",
-  "identifier": "com.crafterstation.open-screenstudio",
+  "productName": "Screenforge",
+  "version": "0.2.0",
+  "identifier": "com.lettaz.screenforge",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "toolbar",
-        "title": "Open ScreenStudio",
+        "title": "Screenforge",
         "width": 780,
         "height": 300,
         "minWidth": 780,
@@ -52,8 +52,8 @@
       "icons/icon.png"
     ],
     "category": "DeveloperTool",
-    "shortDescription": "Beautiful screen recordings, made simple.",
-    "longDescription": "Open ScreenStudio is an open-source screen recording application that helps you create beautiful, polished screen recordings with automatic zoom, cursor smoothing, and professional styling.",
+    "shortDescription": "Beautiful, batteries-included screen recordings.",
+    "longDescription": "Screenforge is an open-source screen recording application with automatic zoom, smooth cursors, click ripples, branding presets, a teleprompter, blur-mask redaction, background music, optimized GIF/clipboard export, and more. Forked and extended from open-screenstudio.",
     "macOS": {
       "entitlements": null,
       "exceptionDomain": "",

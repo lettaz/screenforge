@@ -1,7 +1,9 @@
-//! Open ScreenStudio - Beautiful screen recordings, made simple.
+//! Screenforge — beautiful, batteries-included screen recordings.
 //!
-//! This is the main library crate for the Open ScreenStudio application.
-//! It provides the Tauri application setup and all backend functionality.
+//! This is the main library crate for the Screenforge desktop application.
+//! Forked and extended from open-screenstudio. Adds branding presets,
+//! click ripples, keystroke overlay, teleprompter, blur masks, background
+//! music, optimized GIF/clipboard export, motion blur, and more.
 
 pub mod capture;
 pub mod commands;
@@ -28,7 +30,7 @@ pub fn run() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    tracing::info!("Starting Open ScreenStudio v{}", env!("CARGO_PKG_VERSION"));
+    tracing::info!("Starting Screenforge v{}", env!("CARGO_PKG_VERSION"));
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())

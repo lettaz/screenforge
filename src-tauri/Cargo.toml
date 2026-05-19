@@ -1,11 +1,11 @@
 [package]
 name = "open-screenstudio"
-version = "0.1.0"
-description = "Beautiful screen recordings, made simple. Open source."
-authors = ["Crafter Station"]
+version = "0.2.0"
+description = "Screenforge — beautiful screen recordings with branding, presets, teleprompter, blur masks, music, and optimized export. Forked from open-screenstudio."
+authors = ["lettaz", "Crafter Station (original open-screenstudio)"]
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/crafter-station/open-screenstudio"
+repository = "https://github.com/lettaz/screenforge"
 
 [lib]
 name = "open_screenstudio_lib"

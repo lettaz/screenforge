@@ -251,7 +251,7 @@ export default function RecordingToolbar() {
     const { createProjectFromRecording } = useProjectStore.getState();
 
     try {
-      // Create a project from the recording - auto-saves to ~/Movies/Open ScreenStudio/
+      // Create a project from the recording - auto-saves to ~/Movies/Screenforge/
       await createProjectFromRecording(recordingResult.bundlePath);
       // Dismiss the popup after successful save
       handleDismissPopup();
@@ -267,7 +267,7 @@ export default function RecordingToolbar() {
     const { createProjectFromRecording } = useProjectStore.getState();
 
     try {
-      // Create a project from the recording - auto-saves to ~/Movies/Open ScreenStudio/
+      // Create a project from the recording - auto-saves to ~/Movies/Screenforge/
       await createProjectFromRecording(recordingResult.bundlePath);
 
       // Get the saved project path to open in editor

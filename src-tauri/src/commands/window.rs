@@ -29,7 +29,7 @@ pub async fn open_editor_window(
         "editor",
         WebviewUrl::App(url.into()),
     )
-    .title("Open ScreenStudio - Editor")
+    .title("Screenforge — Editor")
     .inner_size(1400.0, 900.0)
     .min_inner_size(1000.0, 700.0)
     .resizable(true)

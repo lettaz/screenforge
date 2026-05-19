@@ -1,7 +1,7 @@
 {
-  "name": "open-screenstudio",
-  "version": "0.1.0",
-  "description": "Beautiful screen recordings, made simple. Open source.",
+  "name": "screenforge",
+  "version": "0.2.0",
+  "description": "Beautiful, beautifully-extended screen recordings. A community fork of open-screenstudio.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,21 +15,22 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/crafter-station/open-screenstudio.git"
+    "url": "git+https://github.com/lettaz/screenforge.git"
   },
   "keywords": [
     "screen-recording",
     "video-editing",
     "tauri",
     "rust",
-    "react"
+    "react",
+    "open-source"
   ],
-  "author": "Crafter Station",
+  "author": "lettaz (fork of Crafter Station's open-screenstudio)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/crafter-station/open-screenstudio/issues"
+    "url": "https://github.com/lettaz/screenforge/issues"
   },
-  "homepage": "https://github.com/crafter-station/open-screenstudio#readme",
+  "homepage": "https://github.com/lettaz/screenforge#readme",
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.0.0",
