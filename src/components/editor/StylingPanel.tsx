@@ -391,6 +391,22 @@ export default function StylingPanel({ keystrokes = [] }: StylingPanelProps) {
                 />
               ))}
             </div>
+            <div className="h-px bg-border" />
+            <Slider
+              id="motion-blur"
+              label="Motion blur (export)"
+              min={0}
+              max={8}
+              step={1}
+              value={config.motionBlur ?? 0}
+              onChange={(v) => updateConfig({ motionBlur: v })}
+              suffix=" fr"
+            />
+            <p className="text-[10px] text-white/40 leading-relaxed">
+              0 disables. Values 1–8 average that many extra frames at export
+              time to soften fast cursor / scroll motion. Preview is not
+              affected.
+            </p>
           </>
         )}
 

@@ -686,9 +686,21 @@ pub fn export_with_edits(
     let (video_filter, video_label) = build_video_filter(&edits.segments, 0);
     filter_parts.push(video_filter);
 
-    // Add scaling and fps conversion
-    // If webcam is included, output to intermediate label; otherwise output to [vout]
-    let video_scaled_label = if webcam_input_index.is_some() {
+    // Pipeline labels after scaling:
+    //
+    //   scale → [scale_output_label] ──(if motion_blur)──> tmix → [post_blur_label] ──(if webcam)──> overlay → [vout]
+    //
+    // The final label for downstream stages is `post_blur_label`. Motion blur
+    // is implemented as a temporal mix of N+1 frames (Screenforge #17) — it
+    // approximates cursor motion blur by averaging consecutive output frames.
+    // This blurs ALL moving content, not just the cursor, which is the honest
+    // behavior given the cursor is already baked into the screen capture.
+    let motion_blur_active = options.motion_blur > 0;
+    let webcam_overlay_active = webcam_input_index.is_some();
+
+    let scale_output_label = if motion_blur_active {
+        "vpremblur"
+    } else if webcam_overlay_active {
         "vscaled"
     } else {
         "vout"
@@ -697,12 +709,24 @@ pub fn export_with_edits(
     let scale_filter = if source_width != output_width || source_height != output_height {
         format!(
             "[{}]scale={}:{}:force_original_aspect_ratio=decrease,pad={}:{}:(ow-iw)/2:(oh-ih)/2:black,fps={}[{}]",
-            video_label, output_width, output_height, output_width, output_height, output_fps, video_scaled_label
+            video_label, output_width, output_height, output_width, output_height, output_fps, scale_output_label
         )
     } else {
-        format!("[{}]fps={}[{}]", video_label, output_fps, video_scaled_label)
+        format!("[{}]fps={}[{}]", video_label, output_fps, scale_output_label)
     };
     filter_parts.push(scale_filter);
+
+    // Optional motion blur stage.
+    if motion_blur_active {
+        let frames = options.motion_blur.clamp(1, 8) + 1;
+        // Equal weights — produces a uniform temporal average.
+        let weights = (0..frames).map(|_| "1").collect::<Vec<_>>().join(" ");
+        let post_blur_label = if webcam_overlay_active { "vscaled" } else { "vout" };
+        filter_parts.push(format!(
+            "[{}]tmix=frames={}:weights={}[{}]",
+            scale_output_label, frames, weights, post_blur_label
+        ));
+    }
 
     // Add webcam overlay if included
     if let Some(wc_idx) = webcam_input_index {
