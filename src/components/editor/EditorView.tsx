@@ -1000,7 +1000,7 @@ export default function EditorView() {
           </div>
           </div>
         </div>
-        <StylingPanel />
+        <StylingPanel keystrokes={recordingBundle?.keystrokes ?? []} />
       </div>
 
       {/* Timeline */}

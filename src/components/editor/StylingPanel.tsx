@@ -4,6 +4,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import {
   BookOpen,
   EyeOff,
+  FastForward,
   Image as ImageIcon,
   Keyboard,
   Layers,
@@ -20,6 +21,8 @@ import KeystrokesSection from "./KeystrokesSection";
 import BlurRegionsSection from "./BlurRegionsSection";
 import MusicSection from "./MusicSection";
 import LayoutsSection from "./LayoutsSection";
+import TypingSpeedupSection from "./TypingSpeedupSection";
+import type { KeystrokeEvent } from "../../types/recording";
 import type {
   BackgroundType,
   GradientConfig,
@@ -34,10 +37,15 @@ type Section =
   | "aspect"
   | "clicks"
   | "keys"
+  | "typing"
   | "privacy"
   | "music"
   | "layouts"
   | "presets";
+
+interface StylingPanelProps {
+  keystrokes?: KeystrokeEvent[];
+}
 
 const SOLID_PRESETS: readonly string[] = [
   "#0F172A",
@@ -67,7 +75,7 @@ const ASPECT_PRESETS: readonly { name: string; x: number; y: number }[] = [
   { name: "21:9", x: 21, y: 9 },
 ];
 
-export default function StylingPanel() {
+export default function StylingPanel({ keystrokes = [] }: StylingPanelProps) {
   const { project, updateConfig } = useProjectStore();
   const [section, setSection] = useState<Section>("background");
 
@@ -146,6 +154,7 @@ export default function StylingPanel() {
             { id: "aspect", label: "Aspect", icon: ImageIcon },
             { id: "clicks", label: "Clicks", icon: MousePointer2 },
             { id: "keys", label: "Keys", icon: Keyboard },
+            { id: "typing", label: "Typing", icon: FastForward },
             { id: "privacy", label: "Privacy", icon: EyeOff },
             { id: "music", label: "Music", icon: Music },
             { id: "layouts", label: "Layouts", icon: Layers },
@@ -466,6 +475,10 @@ export default function StylingPanel() {
         {section === "clicks" && <ClickEffectsSection />}
 
         {section === "keys" && <KeystrokesSection />}
+
+        {section === "typing" && (
+          <TypingSpeedupSection keystrokes={keystrokes} />
+        )}
 
         {section === "privacy" && <BlurRegionsSection />}
 

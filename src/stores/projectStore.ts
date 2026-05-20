@@ -172,6 +172,18 @@ interface ProjectState {
     splitTimeMs: number,
   ) => void;
 
+  /**
+   * Apply a `timeScale` to a source-time range across both tracks, splitting
+   * existing slices at the range boundaries. Used by auto speed-up typing
+   * detection (Screenforge #18). Idempotent on already-scaled ranges.
+   */
+  applySpeedRange: (
+    sceneIndex: number,
+    sourceStartMs: number,
+    sourceEndMs: number,
+    timeScale: number,
+  ) => void;
+
   // Blur region actions
   addBlurRegion: (sceneIndex: number, region: BlurRegion) => void;
   updateBlurRegion: (
@@ -887,6 +899,68 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   getBlurRegions: () => {
     const scene = get().getActiveScene();
     return scene?.blurRegions ?? [];
+  },
+
+  applySpeedRange: (
+    sceneIndex: number,
+    sourceStartMs: number,
+    sourceEndMs: number,
+    timeScale: number,
+  ) => {
+    const { project } = get();
+    if (!project || sceneIndex < 0 || sceneIndex >= project.scenes.length)
+      return;
+    if (sourceEndMs - sourceStartMs < 100 || timeScale <= 0) {
+      return;
+    }
+    const scene = project.scenes[sceneIndex];
+
+    const splitTrack = (slices: Slice[]): Slice[] => {
+      const result: Slice[] = [];
+      for (const slice of slices) {
+        const a = slice.sourceStartMs;
+        const b = slice.sourceEndMs;
+        const s = Math.max(a, sourceStartMs);
+        const e = Math.min(b, sourceEndMs);
+        if (s >= e) {
+          result.push(slice);
+          continue;
+        }
+        if (a < s) {
+          result.push({
+            ...slice,
+            id: generateSliceId(),
+            sourceStartMs: a,
+            sourceEndMs: s,
+          });
+        }
+        result.push({
+          ...slice,
+          id: generateSliceId(),
+          sourceStartMs: s,
+          sourceEndMs: e,
+          timeScale,
+        });
+        if (e < b) {
+          result.push({
+            ...slice,
+            id: generateSliceId(),
+            sourceStartMs: e,
+            sourceEndMs: b,
+          });
+        }
+      }
+      return result;
+    };
+
+    const newScenes = [...project.scenes];
+    newScenes[sceneIndex] = {
+      ...scene,
+      screenSlices: splitTrack(scene.screenSlices),
+      cameraSlices: splitTrack(scene.cameraSlices),
+    };
+    set({ project: { ...project, scenes: newScenes } });
+    triggerAutoSave(get);
   },
 
   addBlurRegion: (sceneIndex: number, region: BlurRegion) => {
