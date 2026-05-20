@@ -809,14 +809,41 @@ pub fn export_with_edits(
         None
     };
 
-    // Join all filter parts
+    // GIF: build a two-pass palette pipeline (Screenforge #29). The main
+    // chain still writes to [vout]; we split it, generate a palette from
+    // one branch, and apply it on the other so colors stay accurate at
+    // small file sizes. Final label becomes [gifout].
+    let final_video_label = if matches!(options.format, ExportFormat::Gif) {
+        let stats_mode = options
+            .gif_stats_mode
+            .as_deref()
+            .unwrap_or("diff");
+        let dither = options.gif_dither.as_deref().unwrap_or("bayer");
+        let dither_args = match dither {
+            "none" => "dither=none".to_string(),
+            "bayer" => "dither=bayer:bayer_scale=5".to_string(),
+            "sierra2" => "dither=sierra2".to_string(),
+            "sierra2_4a" => "dither=sierra2_4a".to_string(),
+            _ => "dither=bayer:bayer_scale=5".to_string(),
+        };
+        filter_parts.push(format!(
+            "[vout]split=2[gpa][gpb];[gpa]palettegen=stats_mode={}[palette];[gpb][palette]paletteuse={}[gifout]",
+            stats_mode, dither_args
+        ));
+        "[gifout]".to_string()
+    } else {
+        "[vout]".to_string()
+    };
+
     let filter_complex = filter_parts.join(";");
     args.extend(["-filter_complex".to_string(), filter_complex]);
 
-    // Map outputs
-    args.extend(["-map".to_string(), "[vout]".to_string()]);
-    if let Some(audio_label) = final_audio_label {
-        args.extend(["-map".to_string(), audio_label]);
+    args.extend(["-map".to_string(), final_video_label]);
+    // GIF is silent — skip audio mapping entirely so ffmpeg doesn't warn.
+    if !matches!(options.format, ExportFormat::Gif) {
+        if let Some(audio_label) = final_audio_label {
+            args.extend(["-map".to_string(), audio_label]);
+        }
     }
 
     // Video codec options
@@ -846,15 +873,18 @@ pub fn export_with_edits(
             ]);
         }
         ExportFormat::Gif => {
-            // GIF handling - simplified
             args.extend(["-f".to_string(), "gif".to_string()]);
+            // -loop 0 = infinite (default), -loop -1 = no loop, -loop N = N+1 plays.
+            let loop_count = options.gif_loop.unwrap_or(0);
+            args.extend(["-loop".to_string(), loop_count.to_string()]);
         }
     }
 
-    // Audio codec
-    if mic_input_index.is_some()
-        || system_input_index.is_some()
-        || music_input_index.is_some()
+    // Audio codec. GIF is silent so we never emit audio settings for it.
+    if !matches!(options.format, ExportFormat::Gif)
+        && (mic_input_index.is_some()
+            || system_input_index.is_some()
+            || music_input_index.is_some())
     {
         args.extend([
             "-c:a".to_string(),

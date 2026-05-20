@@ -183,6 +183,18 @@ pub struct ExportOptions {
     /// 0 disables; higher values produce stronger trails.
     #[serde(default)]
     pub motion_blur: u32,
+    /// GIF loop count (0 = infinite, -1 = no loop, N >= 1 = play N times).
+    /// Only honored when `format == Gif`. Added in Screenforge v0.2.
+    #[serde(default)]
+    pub gif_loop: Option<i32>,
+    /// GIF dithering algorithm: "none", "bayer", "sierra2", or "sierra2_4a".
+    /// Only honored when `format == Gif`. Added in Screenforge v0.2.
+    #[serde(default)]
+    pub gif_dither: Option<String>,
+    /// GIF palette generation stats mode: "full", "diff", or "single".
+    /// `diff` is the best default for screen recordings. Added in Screenforge v0.2.
+    #[serde(default)]
+    pub gif_stats_mode: Option<String>,
 }
 
 /// Export progress stages

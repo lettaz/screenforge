@@ -164,6 +164,11 @@ export default function ExportDialog({
   const [customFps, setCustomFps] = useState(60);
   const [useCustom, setUseCustom] = useState(false);
 
+  // GIF-specific options (Screenforge #29)
+  type GifDither = "bayer" | "sierra2" | "sierra2_4a" | "none";
+  const [gifLoop, setGifLoop] = useState<number>(0);
+  const [gifDither, setGifDither] = useState<GifDither>("bayer");
+
   // Refs for event listeners
   const unlistenProgressRef = useRef<UnlistenFn | null>(null);
   const unlistenCompleteRef = useRef<UnlistenFn | null>(null);
@@ -283,6 +288,9 @@ export default function ExportDialog({
           musicFadeOutMs: music?.enabled ? music.fadeOutMs : 0,
           motionBlur,
           videoBitrateKbps: bitrate ?? null,
+          gifLoop: format === "gif" ? gifLoop : null,
+          gifDither: format === "gif" ? gifDither : null,
+          gifStatsMode: format === "gif" ? "diff" : null,
         },
         edits,
       });
@@ -510,6 +518,57 @@ export default function ExportDialog({
                       <option value="15">15</option>
                     </select>
                   </div>
+                </div>
+              )}
+
+              {/* GIF-specific options (Screenforge #29) */}
+              {(useCustom ? customFormat : currentPreset?.format) === "gif" && (
+                <div className="grid grid-cols-2 gap-3 p-4 bg-panel rounded-lg">
+                  <div>
+                    <label
+                      htmlFor="gif-loop"
+                      className="text-xs text-white/60 block mb-1"
+                    >
+                      Loop
+                    </label>
+                    <select
+                      id="gif-loop"
+                      value={gifLoop}
+                      onChange={(e) => setGifLoop(parseInt(e.target.value, 10))}
+                      className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-sm text-white"
+                    >
+                      <option value={0}>Infinite</option>
+                      <option value={-1}>Play once</option>
+                      <option value={1}>2 times</option>
+                      <option value={2}>3 times</option>
+                      <option value={4}>5 times</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="gif-dither"
+                      className="text-xs text-white/60 block mb-1"
+                    >
+                      Dither
+                    </label>
+                    <select
+                      id="gif-dither"
+                      value={gifDither}
+                      onChange={(e) =>
+                        setGifDither(e.target.value as GifDither)
+                      }
+                      className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-sm text-white"
+                    >
+                      <option value="bayer">Bayer (sharp)</option>
+                      <option value="sierra2">Sierra (smooth)</option>
+                      <option value="sierra2_4a">Sierra Lite</option>
+                      <option value="none">None (smallest)</option>
+                    </select>
+                  </div>
+                  <p className="col-span-2 text-[11px] text-white/40 leading-relaxed">
+                    Two-pass palette + chosen dither. Most screen recordings
+                    look best with Bayer at 720p / 15 fps.
+                  </p>
                 </div>
               )}
 
