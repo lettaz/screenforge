@@ -54,6 +54,7 @@ pub fn run() {
             commands::project::update_project,
             // System commands
             commands::system::get_system_info,
+            commands::system::copy_file_to_clipboard,
             // Recording commands
             commands::recording::get_displays,
             commands::recording::get_audio_devices,

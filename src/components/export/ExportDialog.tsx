@@ -10,6 +10,8 @@ import {
   Smartphone,
   Square,
   CheckCircle,
+  ClipboardCheck,
+  Clipboard,
   Loader2,
   AlertCircle,
   FolderOpen,
@@ -156,6 +158,9 @@ export default function ExportDialog({
   const [exportStage, setExportStage] = useState<string>("Exporting...");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [outputPath, setOutputPath] = useState<string>("");
+  // "Copy to clipboard" UI feedback after a successful export.
+  const [copyState, setCopyState] = useState<"idle" | "copying" | "copied" | "error">("idle");
+  const [copyError, setCopyError] = useState<string>("");
 
   // Custom settings (when not using preset)
   const [customFormat, setCustomFormat] = useState<ExportFormat>("mp4");
@@ -180,6 +185,8 @@ export default function ExportDialog({
       setExportState("idle");
       setExportProgress(0);
       setErrorMessage("");
+      setCopyState("idle");
+      setCopyError("");
     }
   }, [isOpen]);
 
@@ -329,6 +336,20 @@ export default function ExportDialog({
       await invoke("plugin:shell|open", { path: folderPath });
     } catch (e) {
       console.error("Failed to open folder:", e);
+    }
+  };
+
+  const handleCopyToClipboard = async () => {
+    if (!outputPath) return;
+    setCopyState("copying");
+    setCopyError("");
+    try {
+      await invoke("copy_file_to_clipboard", { path: outputPath });
+      setCopyState("copied");
+      window.setTimeout(() => setCopyState("idle"), 2200);
+    } catch (e) {
+      setCopyState("error");
+      setCopyError(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -670,6 +691,36 @@ export default function ExportDialog({
 
           {exportState === "complete" && (
             <>
+              <button
+                type="button"
+                onClick={handleCopyToClipboard}
+                disabled={copyState === "copying"}
+                className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm transition-colors disabled:opacity-60 ${
+                  copyState === "copied"
+                    ? "border-success/60 text-success"
+                    : copyState === "error"
+                      ? "border-destructive/60 text-destructive"
+                      : "border-border text-white/60 hover:text-white hover:border-muted-foreground/50"
+                }`}
+                title={
+                  copyState === "error" && copyError
+                    ? copyError
+                    : "Copy file to clipboard"
+                }
+              >
+                {copyState === "copying" ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : copyState === "copied" ? (
+                  <ClipboardCheck className="w-4 h-4" />
+                ) : (
+                  <Clipboard className="w-4 h-4" />
+                )}
+                {copyState === "copying"
+                  ? "Copying…"
+                  : copyState === "copied"
+                    ? "Copied"
+                    : "Copy"}
+              </button>
               <button
                 type="button"
                 onClick={handleOpenFolder}
