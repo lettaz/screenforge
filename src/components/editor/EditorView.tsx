@@ -6,6 +6,7 @@ import {
   Loader2,
   Download,
   FolderOpen,
+  Upload,
 } from "lucide-react";
 import ExportDialog from "../export/ExportDialog";
 import StylingPanel from "./StylingPanel";
@@ -59,6 +60,7 @@ export default function EditorView() {
     updateBlurRegion,
     activeSceneIndex,
     openProject,
+    createProjectFromVideo,
   } = useProjectStore();
   const selectedBlurRegionId = useEditorStore((s) => s.selectedBlurRegionId);
   const selectBlurRegion = useEditorStore((s) => s.selectBlurRegion);
@@ -793,6 +795,29 @@ export default function EditorView() {
           >
             <FolderOpen className="w-4 h-4" />
             Open
+          </button>
+          {/* Import video as a new project (Screenforge #22) */}
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const savedPath = await createProjectFromVideo();
+                if (savedPath) {
+                  // Reload editor with the new project bundle.
+                  const params = new URLSearchParams(window.location.search);
+                  params.set("window", "editor");
+                  params.set("recording", savedPath);
+                  window.location.search = params.toString();
+                }
+              } catch (err) {
+                console.error("Failed to import video:", err);
+              }
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-foreground/70 hover:text-foreground hover:bg-accent transition-colors"
+            title="Import a video file as a new project"
+          >
+            <Upload className="w-4 h-4" />
+            Import
           </button>
           {/* Export button */}
           <button

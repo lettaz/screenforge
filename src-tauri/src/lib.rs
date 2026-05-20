@@ -48,6 +48,7 @@ pub fn run() {
             commands::project::get_project_path,
             commands::project::get_default_projects_dir,
             commands::project::create_project_from_recording,
+            commands::project::create_project_from_video,
             commands::project::save_project_to_path,
             commands::project::auto_save_project,
             commands::project::update_project,

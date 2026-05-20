@@ -118,6 +118,8 @@ interface ProjectState {
   // Basic project actions
   createProject: () => void;
   createProjectFromRecording: (recordingBundlePath: string) => Promise<void>;
+  /** Create a new project from an existing video file (Screenforge #22). */
+  createProjectFromVideo: () => Promise<string | null>;
   openProject: () => Promise<void>;
   openProjectFromPath: (path: string) => Promise<void>;
   closeProject: () => void;
@@ -285,6 +287,50 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       });
 
       console.log(`Project created and saved to: ${savedPath}`);
+    } catch (e) {
+      set({ error: String(e), isLoading: false });
+      throw e;
+    }
+  },
+
+  // Create a project from an existing video file (Screenforge #22).
+  createProjectFromVideo: async () => {
+    try {
+      const selected = await open({
+        title: "Import video as project",
+        filters: [
+          {
+            name: "Video",
+            extensions: ["mp4", "mov", "m4v", "webm", "mkv", "avi"],
+          },
+        ],
+        multiple: false,
+      });
+      if (!selected || Array.isArray(selected)) return null;
+
+      set({ isLoading: true, error: null });
+      const [project, savedPath] = await invoke<[Project, string]>(
+        "create_project_from_video",
+        { videoPath: selected },
+      );
+
+      const now = new Date().toISOString();
+      const meta: ProjectMeta = {
+        version: "0.1.0",
+        format: "osp-v1",
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      set({
+        project,
+        meta,
+        projectPath: savedPath,
+        activeSceneIndex: 0,
+        isLoading: false,
+      });
+
+      return savedPath;
     } catch (e) {
       set({ error: String(e), isLoading: false });
       throw e;

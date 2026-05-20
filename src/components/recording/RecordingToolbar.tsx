@@ -14,6 +14,7 @@ import {
   VolumeX,
   Settings,
   ScrollText,
+  Upload,
   X,
   ChevronDown,
   Circle,
@@ -608,6 +609,30 @@ export default function RecordingToolbar() {
 
         {/* Right side controls */}
         <div className="flex items-center gap-1 ml-auto">
+          {/* Import existing video as project */}
+          <button
+            type="button"
+            onClick={async (e) => {
+              e.stopPropagation();
+              try {
+                const savedPath = await useProjectStore
+                  .getState()
+                  .createProjectFromVideo();
+                if (savedPath) {
+                  await invoke("open_editor_window", {
+                    recordingPath: savedPath,
+                  });
+                }
+              } catch (err) {
+                console.error("Failed to import video:", err);
+              }
+            }}
+            className="toolbar-btn-icon"
+            title="Import existing video as a project"
+          >
+            <Upload className="w-4 h-4" />
+          </button>
+
           {/* Teleprompter */}
           <button
             type="button"

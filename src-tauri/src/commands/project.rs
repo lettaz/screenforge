@@ -207,20 +207,23 @@ pub async fn create_project_from_recording(
         camera_position: Point { x: 0.95, y: 0.95 },
     };
 
-    // Combine screen and camera slices into a single slices list
-    let mut slices = vec![screen_slice];
-    if let Some(cam_slice) = camera_slice {
-        slices.push(cam_slice);
-    }
+    // Track-aware slice layout: screen and camera have their own tracks so
+    // they can be trimmed/reordered independently. The deprecated `slices`
+    // field is kept empty for backward compatibility.
+    let screen_slices = vec![screen_slice];
+    let camera_slices = camera_slice.map(|c| vec![c]).unwrap_or_default();
 
     let scene = Scene {
         id: Uuid::new_v4().to_string(),
         name: "Main".to_string(),
         scene_type: SceneType::Recording,
         session_index: 0,
-        slices,
+        slices: Vec::new(),
+        screen_slices,
+        camera_slices,
         zoom_ranges: Vec::new(),
         layouts: vec![default_layout],
+        blur_regions: Vec::new(),
     };
 
     // Generate project name from timestamp
@@ -380,6 +383,165 @@ pub async fn update_project(
     let mut current = state.current_project.lock().await;
     *current = Some(project);
     Ok(())
+}
+
+/// Create a project from an existing video file (Screenforge #22).
+///
+/// Copies (or re-muxes / transcodes when needed) the source file into a new
+/// `.osp` bundle under the default projects directory and returns the saved
+/// `Project` plus its absolute path.
+///
+/// Imported projects only have a screen track — there is no cursor data,
+/// click metadata, keystrokes, or webcam channel because the source was a
+/// finished video. All styling features (background, padding, shadow,
+/// presets, click highlights configured manually, blur masks, music) still
+/// apply.
+#[tauri::command]
+pub async fn create_project_from_video(
+    state: State<'_, AppState>,
+    video_path: String,
+) -> Result<(Project, String), String> {
+    let source = PathBuf::from(&video_path);
+    if !source.exists() {
+        return Err(format!("Video file not found: {}", video_path));
+    }
+
+    tracing::info!("Creating project from external video: {}", video_path);
+
+    let video_metadata = crate::commands::recording::get_video_metadata(video_path.clone()).await?;
+    let duration_ms = video_metadata.duration_ms;
+
+    let projects_dir = get_projects_directory()?;
+    let now = Utc::now();
+    let project_name = format!("Imported {}", now.format("%Y-%m-%d %H-%M-%S"));
+    let bundle_filename = format!("{}.osp", project_name);
+    let dest_path = projects_dir.join(&bundle_filename);
+    let recording_dir = dest_path.join("recording");
+    fs::create_dir_all(&recording_dir)
+        .map_err(|e| format!("Failed to create project directory: {}", e))?;
+
+    let dest_video = recording_dir.join("recording-0.mp4");
+    let source_ext = source
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+
+    // Same-format files are just copied. Other containers go through ffmpeg —
+    // first a cheap stream-copy remux, then a full transcode if codecs
+    // can't ride in mp4 directly.
+    if source_ext == "mp4" {
+        fs::copy(&source, &dest_video)
+            .map_err(|e| format!("Failed to copy source video: {}", e))?;
+    } else {
+        let remux = std::process::Command::new("ffmpeg")
+            .args([
+                "-y",
+                "-i",
+                &video_path,
+                "-c",
+                "copy",
+                "-movflags",
+                "+faststart",
+            ])
+            .arg(&dest_video)
+            .output()
+            .map_err(|e| format!("Failed to invoke ffmpeg for remux: {}", e))?;
+
+        if !remux.status.success() {
+            tracing::info!("ffmpeg remux failed, falling back to transcode");
+            let transcode = std::process::Command::new("ffmpeg")
+                .args([
+                    "-y",
+                    "-i",
+                    &video_path,
+                    "-c:v",
+                    "libx264",
+                    "-preset",
+                    "fast",
+                    "-crf",
+                    "20",
+                    "-c:a",
+                    "aac",
+                    "-b:a",
+                    "192k",
+                    "-movflags",
+                    "+faststart",
+                ])
+                .arg(&dest_video)
+                .output()
+                .map_err(|e| format!("Failed to invoke ffmpeg for transcode: {}", e))?;
+            if !transcode.status.success() {
+                let stderr = String::from_utf8_lossy(&transcode.stderr);
+                return Err(format!("ffmpeg transcode failed: {}", stderr));
+            }
+        }
+    }
+
+    let screen_slice = Slice {
+        id: Uuid::new_v4().to_string(),
+        source_start_ms: 0.0,
+        source_end_ms: duration_ms,
+        time_scale: 1.0,
+        volume: 1.0,
+        hide_cursor: false,
+        disable_cursor_smoothing: false,
+    };
+
+    let default_layout = Layout {
+        id: Uuid::new_v4().to_string(),
+        start_time: 0.0,
+        end_time: duration_ms,
+        layout_type: LayoutType::ScreenOnly,
+        camera_size: 0.25,
+        camera_position: Point { x: 0.95, y: 0.95 },
+    };
+
+    let scene = Scene {
+        id: Uuid::new_v4().to_string(),
+        name: "Main".to_string(),
+        scene_type: SceneType::Recording,
+        session_index: 0,
+        slices: Vec::new(),
+        screen_slices: vec![screen_slice],
+        camera_slices: Vec::new(),
+        zoom_ranges: Vec::new(),
+        layouts: vec![default_layout],
+        blur_regions: Vec::new(),
+    };
+
+    let mut config = ProjectConfig::default();
+    config.recording_range = (0.0, duration_ms);
+    config.camera.enabled = false;
+
+    let project = Project {
+        id: Uuid::new_v4().to_string(),
+        name: project_name,
+        created_at: now,
+        config,
+        scenes: vec![scene],
+    };
+
+    bundle::write_project(&project, &dest_path)
+        .map_err(|e| format!("Failed to write project: {}", e))?;
+
+    {
+        let mut current_project = state.current_project.lock().await;
+        *current_project = Some(project.clone());
+    }
+    {
+        let mut saved_path = state.current_project_path.lock().await;
+        *saved_path = Some(dest_path.clone());
+    }
+    {
+        let mut temp_path = state.temp_bundle_path.lock().await;
+        *temp_path = None;
+    }
+
+    let dest_path_str = dest_path.to_string_lossy().to_string();
+    tracing::info!("Imported project '{}' saved to {}", project.name, dest_path_str);
+
+    Ok((project, dest_path_str))
 }
 
 /// Helper function to recursively copy directory contents
