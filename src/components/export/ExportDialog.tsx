@@ -15,6 +15,9 @@ import {
   Loader2,
   AlertCircle,
   FolderOpen,
+  Youtube,
+  Twitter,
+  Instagram,
   X,
 } from "lucide-react";
 import { useProjectStore } from "../../stores/projectStore";
@@ -35,6 +38,8 @@ interface ExportPreset {
   // "original" means use source, otherwise "WIDTHxHEIGHT" for specific size
   resolution?: string;
   fps?: number; // Optional - if not specified, uses source fps
+  /** Optional video bitrate override in kbps (platform presets, Screenforge #8). */
+  bitrateKbps?: number;
 }
 
 interface ExportProgress {
@@ -61,6 +66,9 @@ interface ExportDialogProps {
   durationMs?: number;
 }
 
+// YouTube recommended bitrates: 1080p30 = 8 Mbps, 1080p60 = 12 Mbps, 4K = 35 Mbps.
+// Twitter caps at 25 Mbps but recommends 6 Mbps for 720p.
+// Instagram (feed/Reels) recommends ~5 Mbps for 1080×1920.
 const presets: ExportPreset[] = [
   {
     id: "original",
@@ -68,7 +76,6 @@ const presets: ExportPreset[] = [
     icon: Monitor,
     format: "mp4",
     quality: "high",
-    // No resolution/fps = use source (no scaling, no frame rate change)
   },
   {
     id: "web-hd",
@@ -76,7 +83,47 @@ const presets: ExportPreset[] = [
     icon: Globe,
     format: "mp4",
     quality: "high",
-    resolution: "1920x1080", // Scale to fit 1080p, preserving aspect ratio
+    resolution: "1920x1080",
+  },
+  {
+    id: "youtube-1080",
+    name: "YouTube 1080",
+    icon: Youtube,
+    format: "mp4",
+    quality: "high",
+    resolution: "1920x1080",
+    fps: 60,
+    bitrateKbps: 12000,
+  },
+  {
+    id: "youtube-4k",
+    name: "YouTube 4K",
+    icon: Youtube,
+    format: "mp4",
+    quality: "high",
+    resolution: "3840x2160",
+    fps: 60,
+    bitrateKbps: 45000,
+  },
+  {
+    id: "twitter",
+    name: "Twitter",
+    icon: Twitter,
+    format: "mp4",
+    quality: "medium",
+    resolution: "1280x720",
+    fps: 30,
+    bitrateKbps: 6000,
+  },
+  {
+    id: "instagram-reel",
+    name: "Reels 9:16",
+    icon: Instagram,
+    format: "mp4",
+    quality: "medium",
+    resolution: "1080x1920",
+    fps: 30,
+    bitrateKbps: 5000,
   },
   {
     id: "social",
@@ -84,7 +131,7 @@ const presets: ExportPreset[] = [
     icon: Smartphone,
     format: "mp4",
     quality: "medium",
-    resolution: "1280x720", // Scale to fit 720p, preserving aspect ratio
+    resolution: "1280x720",
   },
   {
     id: "gif",
@@ -173,6 +220,11 @@ export default function ExportDialog({
   type GifDither = "bayer" | "sierra2" | "sierra2_4a" | "none";
   const [gifLoop, setGifLoop] = useState<number>(0);
   const [gifDither, setGifDither] = useState<GifDither>("bayer");
+
+  // Custom bitrate override (Screenforge #8)
+  const [customBitrateKbps, setCustomBitrateKbps] = useState<number | undefined>(
+    undefined,
+  );
 
   // Refs for event listeners
   const unlistenProgressRef = useRef<UnlistenFn | null>(null);
@@ -273,7 +325,12 @@ export default function ExportDialog({
 
       const music = project?.config.music;
       const motionBlur = project?.config.motionBlur ?? 0;
-      const bitrate = project?.config.exportBitrateKbps;
+      // Bitrate precedence: explicit custom override > selected platform preset >
+      // project-level default > unset (CRF-only).
+      const bitrate =
+        (useCustom && customBitrateKbps ? customBitrateKbps : undefined) ??
+        (!useCustom ? preset?.bitrateKbps : undefined) ??
+        project?.config.exportBitrateKbps;
 
       await invoke("start_export_with_edits", {
         projectDir: projectDir,
@@ -375,6 +432,13 @@ export default function ExportDialog({
     : currentPreset?.fps
       ? `${currentPreset.fps}fps`
       : "Original";
+  const displayBitrate = useCustom
+    ? customBitrateKbps
+      ? `${customBitrateKbps}kbps`
+      : null
+    : currentPreset?.bitrateKbps
+      ? `${currentPreset.bitrateKbps}kbps`
+      : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -539,6 +603,33 @@ export default function ExportDialog({
                       <option value="15">15</option>
                     </select>
                   </div>
+                  <div className="col-span-2">
+                    <label
+                      htmlFor="export-bitrate"
+                      className="text-xs text-white/60 block mb-1"
+                    >
+                      Bitrate cap (kbps) — leave blank for CRF-only
+                    </label>
+                    <input
+                      id="export-bitrate"
+                      type="number"
+                      min={500}
+                      max={80000}
+                      step={500}
+                      placeholder="e.g. 8000 for YouTube 1080p"
+                      value={customBitrateKbps ?? ""}
+                      onChange={(e) => {
+                        const v = e.target.value.trim();
+                        if (v === "") {
+                          setCustomBitrateKbps(undefined);
+                        } else {
+                          const n = Number(v);
+                          setCustomBitrateKbps(Number.isFinite(n) ? n : undefined);
+                        }
+                      }}
+                      className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-sm text-white placeholder:text-white/30"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -597,6 +688,7 @@ export default function ExportDialog({
               <div className="flex items-center justify-between text-sm text-white/60 pt-2 border-t border-border">
                 <span>
                   {displayFormat} • {displayResolution} • {displayFps}
+                  {displayBitrate ? ` • ${displayBitrate}` : ""}
                 </span>
                 <span>
                   {durationMs > 0

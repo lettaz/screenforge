@@ -861,6 +861,20 @@ pub fn export_with_edits(
                 "-movflags".to_string(),
                 "+faststart".to_string(),
             ]);
+            // Optional bitrate cap (Screenforge #8 platform presets). When set,
+            // ffmpeg picks the lower of the CRF-implied and the explicit cap,
+            // and we supply maxrate/bufsize so the encoder honors the bound.
+            if let Some(kbps) = options.video_bitrate_kbps {
+                let kbps = kbps.max(100);
+                args.extend([
+                    "-b:v".to_string(),
+                    format!("{}k", kbps),
+                    "-maxrate".to_string(),
+                    format!("{}k", kbps),
+                    "-bufsize".to_string(),
+                    format!("{}k", kbps * 2),
+                ]);
+            }
         }
         ExportFormat::Webm => {
             args.extend([
@@ -869,7 +883,10 @@ pub fn export_with_edits(
                 "-crf".to_string(),
                 crf.to_string(),
                 "-b:v".to_string(),
-                "0".to_string(),
+                options
+                    .video_bitrate_kbps
+                    .map(|k| format!("{}k", k.max(100)))
+                    .unwrap_or_else(|| "0".to_string()),
             ]);
         }
         ExportFormat::Gif => {
