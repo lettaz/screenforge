@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
+    "tauri:build": "tauri build && npm run sign:macos",
+    "sign:macos": "codesign --force --deep --sign - --identifier com.lettaz.screenforge src-tauri/target/release/bundle/macos/Screenforge.app || true",
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
   },
