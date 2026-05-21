@@ -124,19 +124,28 @@ pub async fn open_teleprompter_window(app: AppHandle) -> Result<(), String> {
 
     // On macOS, mark the window with NSWindowSharingNone (= 0) so it is
     // excluded from ScreenCaptureKit / built-in screen recording captures.
-    // The selector takes an NSUInteger (u64 on macOS, which is always 64-bit).
+    //
+    // AppKit assertion: `setSharingType:` (and any NSWindow mutation) MUST
+    // run on the main thread. The Tauri command handler executes on a tokio
+    // worker, so we marshal back to the main thread via run_on_main_thread.
+    // Calling it from the worker thread previously crashed the entire app
+    // with `-[NSWMWindowCoordinator performTransactionUsingBlock:]` brk 1.
     #[cfg(target_os = "macos")]
     {
-        if let Ok(ns_window) = window.ns_window() {
-            let ptr: *mut objc2::runtime::AnyObject = ns_window.cast();
-            if !ptr.is_null() {
-                unsafe {
-                    let _: () = objc2::msg_send![&*ptr, setSharingType: 0u64];
+        let window_clone = window.clone();
+        window
+            .run_on_main_thread(move || {
+                if let Ok(ns_window) = window_clone.ns_window() {
+                    let ptr: *mut objc2::runtime::AnyObject = ns_window.cast();
+                    if !ptr.is_null() {
+                        unsafe {
+                            let _: () = objc2::msg_send![&*ptr, setSharingType: 0u64];
+                        }
+                    }
                 }
-            }
-        }
+            })
+            .map_err(|e| e.to_string())?;
     }
-    // Silence the unused-variable warning when the cfg block above is gated out.
     let _ = &window;
 
     tracing::info!("Opened teleprompter window");

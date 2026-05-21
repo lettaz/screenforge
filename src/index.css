@@ -140,6 +140,8 @@
     background: transparent !important;
     padding: 4px 8px;
     box-sizing: border-box;
+    /* Anchor for absolutely-positioned children like the error banner. */
+    position: relative;
   }
 
   .toolbar-content {

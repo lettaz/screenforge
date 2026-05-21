@@ -347,13 +347,16 @@ export default function RecordingToolbar() {
       {errorBanner && (
         <div
           role="alert"
-          className="absolute -bottom-12 left-1/2 -translate-x-1/2 max-w-[680px] px-3 py-2 rounded-lg bg-destructive text-white text-xs leading-relaxed shadow-lg flex items-start gap-2"
+          /* Positioned inside the toolbar's 300px-tall transparent window, just
+             below the visible pill. `top-14` sits clear of the 28px-icon row. */
+          className="absolute top-14 left-1/2 -translate-x-1/2 z-50 max-w-[680px] px-3 py-2 rounded-lg bg-red-500/95 text-white text-xs leading-relaxed shadow-2xl flex items-start gap-2"
+          style={{ width: "calc(100% - 24px)" }}
         >
           <span className="flex-1">{errorBanner}</span>
           <button
             type="button"
             onClick={() => setErrorBanner(null)}
-            className="text-white/80 hover:text-white"
+            className="text-white/80 hover:text-white shrink-0"
             aria-label="Dismiss"
           >
             ×
@@ -693,10 +696,15 @@ export default function RecordingToolbar() {
             <ScrollText className="w-4 h-4" />
           </button>
 
-          {/* Settings */}
+          {/* Settings — placeholder; surfaces a banner instead of being a silent dead click. */}
           <button
             type="button"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              setErrorBanner(
+                "Settings panel isn't built yet. Most options live in the editor's right-hand styling sidebar after a recording.",
+              );
+            }}
             className="toolbar-btn-icon"
             title="Settings"
           >
