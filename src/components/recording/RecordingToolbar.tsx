@@ -80,6 +80,16 @@ export default function RecordingToolbar() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Surfaced error banner — driven from any failing invoke() so users see
+  // why a click did nothing (silent flicker is the worst kind of bug).
+  const [errorBanner, setErrorBanner] = useState<string | null>(null);
+  // Auto-dismiss the banner after 8s so it doesn't stick around forever.
+  useEffect(() => {
+    if (!errorBanner) return;
+    const t = window.setTimeout(() => setErrorBanner(null), 8000);
+    return () => window.clearTimeout(t);
+  }, [errorBanner]);
+
   // Post-recording popup state
   const [showPostRecording, setShowPostRecording] = useState(false);
   const [recordingResult, setRecordingResult] =
@@ -179,6 +189,7 @@ export default function RecordingToolbar() {
   const handleStartRecording = async () => {
     if (selectedDisplayId === null) return;
     setIsLoading(true);
+    setErrorBanner(null);
 
     try {
       const outputDir = `/tmp/open-screenstudio-${Date.now()}`;
@@ -198,6 +209,15 @@ export default function RecordingToolbar() {
       setRecordingTime(0);
     } catch (err) {
       console.error("Failed to start recording:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      // Permission errors get a friendlier message + a hint to System Settings.
+      if (/permission/i.test(msg)) {
+        setErrorBanner(
+          "Screen recording permission needed. Open System Settings → Privacy & Security → Screen Recording, enable Screenforge, then quit and relaunch.",
+        );
+      } else {
+        setErrorBanner(`Couldn't start recording: ${msg}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -205,6 +225,7 @@ export default function RecordingToolbar() {
 
   const handleStopRecording = async () => {
     setIsLoading(true);
+    setErrorBanner(null);
     try {
       const result = await invoke<RecordingResult>("stop_recording");
       setRecordingState("idle");
@@ -213,6 +234,9 @@ export default function RecordingToolbar() {
       setShowPostRecording(true);
     } catch (err) {
       console.error("Failed to stop recording:", err);
+      setErrorBanner(
+        `Couldn't stop recording: ${err instanceof Error ? err.message : String(err)}`,
+      );
     } finally {
       setIsLoading(false);
     }
@@ -224,6 +248,9 @@ export default function RecordingToolbar() {
       setRecordingState("paused");
     } catch (err) {
       console.error("Failed to pause recording:", err);
+      setErrorBanner(
+        `Couldn't pause: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   };
 
@@ -317,6 +344,22 @@ export default function RecordingToolbar() {
 
   return (
     <div className="toolbar-container">
+      {errorBanner && (
+        <div
+          role="alert"
+          className="absolute -bottom-12 left-1/2 -translate-x-1/2 max-w-[680px] px-3 py-2 rounded-lg bg-destructive text-white text-xs leading-relaxed shadow-lg flex items-start gap-2"
+        >
+          <span className="flex-1">{errorBanner}</span>
+          <button
+            type="button"
+            onClick={() => setErrorBanner(null)}
+            className="text-white/80 hover:text-white"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
       <div className="toolbar-content">
         {/* Drag Handle */}
         <button
