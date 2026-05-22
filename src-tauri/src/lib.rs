@@ -18,6 +18,29 @@ use commands::project::AppState;
 use commands::recording::RecorderState;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+/// Prepend the standard Homebrew install prefixes to PATH so that subprocesses
+/// (notably `ffmpeg`) resolve correctly when the app is launched from Finder.
+///
+/// macOS apps launched via Launch Services inherit a minimal PATH like
+/// `/usr/bin:/bin:/usr/sbin:/sbin` — they don't see `/opt/homebrew/bin` even
+/// though Terminal does. Without this fix, every `Command::new("ffmpeg")`
+/// call in the recording / export pipelines fails with "FFmpeg not found".
+/// We only PREPEND so user-set PATH (e.g. when launched via `tauri:dev`)
+/// still wins for any overrides.
+fn ensure_homebrew_in_path() {
+    let existing = std::env::var_os("PATH").unwrap_or_default();
+    let mut entries: Vec<std::path::PathBuf> = std::env::split_paths(&existing).collect();
+    for candidate in ["/opt/homebrew/bin", "/usr/local/bin"] {
+        let p = std::path::PathBuf::from(candidate);
+        if p.exists() && !entries.iter().any(|e| e == &p) {
+            entries.insert(0, p);
+        }
+    }
+    if let Ok(joined) = std::env::join_paths(entries) {
+        std::env::set_var("PATH", joined);
+    }
+}
+
 /// Initialize the application
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -30,7 +53,10 @@ pub fn run() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    ensure_homebrew_in_path();
+
     tracing::info!("Starting Screenforge v{}", env!("CARGO_PKG_VERSION"));
+    tracing::debug!("PATH = {:?}", std::env::var("PATH").unwrap_or_default());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
